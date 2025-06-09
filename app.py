@@ -9,19 +9,6 @@ tabs = st.tabs([
     "근골격계 부담작업 체크리스트"
 ])
 
-with tabs[0]:
-    st.title("사업장 개요")
-    사업장명 = st.text_input("사업장명")
-    소재지 = st.text_input("소재지")
-    업종 = st.text_input("업종")
-    col1, col2 = st.columns(2)
-    with col1:
-        예비조사 = st.date_input("예비조사일")
-        수행기관 = st.text_input("수행기관")
-    with col2:
-        본조사 = st.date_input("본조사일")
-        성명 = st.text_input("성명")
-
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
 
@@ -29,9 +16,8 @@ with tabs[1]:
         "부", "팀", "작업명", "단위작업명", "일일 해당작업 시간", "중량(kg)",
         "1호", "2호", "3호", "4호", "5호", "6호", "7호", "8호", "9호", "10호", "11호"
     ]
-    data = pd.DataFrame(columns=columns, data=[[""]*len(columns) for _ in range(5)])  # 5행 예시
+    data = pd.DataFrame(columns=columns, data=[[""]*len(columns) for _ in range(5)])
 
-    # 각 호별 설명(툴팁)
     ho_tooltips = {
         "1호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 손, 손가락\n작업자세 및 내용: 공구, 키보드 등 사용\n무게: -",
         "2호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 어깨, 팔\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -",
@@ -46,7 +32,6 @@ with tabs[1]:
         "11호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 팔, 몸통\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -"
     }
 
-    # column_config에 툴팁 추가
     column_config = {}
     for col in columns:
         if col in ho_tooltips:
