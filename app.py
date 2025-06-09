@@ -66,7 +66,6 @@ with tabs[1]:
 
 with tabs[2]:
     st.title("유해요인조사표")
-
     st.subheader("가. 조사개요")
     col1, col2 = st.columns(2)
     with col1:
@@ -75,7 +74,7 @@ with tabs[2]:
     with col2:
         조사자 = st.text_input("조사자")
         작업공정명 = st.text_input("작업공정명")
-    작업명 = st.text_input("작업명")
+        작업명 = st.text_input("작업명")
 
     st.subheader("나. 작업장 상황조사")
 
