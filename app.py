@@ -62,3 +62,44 @@ with tabs[1]:
         file_name="근골격계_부담작업_체크리스트.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+with tabs[2]:
+    st.title("유해요인조사표")
+
+    st.subheader("가. 조사개요")
+    col1, col2 = st.columns(2)
+    with col1:
+        조사일시 = st.text_input("조사일시")
+        부서명 = st.text_input("부서명")
+    with col2:
+        조사자 = st.text_input("조사자")
+        작업공정명 = st.text_input("작업공정명")
+    작업명 = st.text_input("작업명")
+
+    st.subheader("나. 작업장 상황조사")
+
+    def 상황조사항목(항목명):
+        st.markdown(f"**{항목명}**")
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            변화없음 = st.checkbox("변화없음", key=f"{항목명}_변화없음")
+        with col2:
+            변화있음 = st.checkbox("변화있음", key=f"{항목명}_변화있음")
+            변화시작 = ""
+            if 변화있음:
+                변화시작 = st.text_input("변화시작(언제부터)", key=f"{항목명}_변화시작")
+        if 항목명 in ["작업량", "작업속도", "업무변화"]:
+            st.write("세부 변화 유형")
+            줄음 = st.checkbox("줄음", key=f"{항목명}_줄음")
+            줄음_시작 = st.text_input("줄음(언제부터)", key=f"{항목명}_줄음_시작") if 줄음 else ""
+            늘어남 = st.checkbox("늘어남", key=f"{항목명}_늘어남")
+            늘어남_시작 = st.text_input("늘어남(언제부터)", key=f"{항목명}_늘어남_시작") if 늘어남 else ""
+            기타 = st.checkbox("기타", key=f"{항목명}_기타")
+            기타_내용 = st.text_input("기타(내용)", key=f"{항목명}_기타_내용") if 기타 else ""
+
+    상황조사항목("작업설비")
+    st.markdown("---")
+    상황조사항목("작업량")
+    st.markdown("---")
+    상황조사항목("작업속도")
+    st.markdown("---")
+    상황조사항목("업무변화")
