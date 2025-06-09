@@ -63,6 +63,7 @@ with tabs[1]:
         file_name="근골격계_부담작업_체크리스트.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 with tabs[2]:
     st.title("유해요인조사표")
 
@@ -104,3 +105,4 @@ with tabs[2]:
     상황조사항목("작업속도")
     st.markdown("---")
     상황조사항목("업무변화")
+)
