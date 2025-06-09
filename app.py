@@ -25,97 +25,31 @@ with tabs[0]:
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
 
-    # 설명용 표 (1~11호, 각 항목별 설명)
-    st.markdown("""
-    <div style="overflow-x:auto;">
-    <table border="1" style="width:100%; text-align:center; font-size:13px; border-collapse:collapse;">
-      <tr style="background-color:#f2f2f2;">
-        <th>구분</th>
-        <th>1호</th>
-        <th>2호</th>
-        <th>3호</th>
-        <th>4호</th>
-        <th>5호</th>
-        <th>6호</th>
-        <th>7호</th>
-        <th>8호</th>
-        <th>9호</th>
-        <th>10호</th>
-        <th>11호</th>
-      </tr>
-      <tr>
-        <td>노출시간</td>
-        <td>하루 4시간 이상</td>
-        <td>하루 4시간 이상</td>
-        <td>하루 4시간 이상</td>
-        <td>하루 2시간 이상</td>
-        <td>하루 2시간 이상</td>
-        <td>하루 2시간 이상</td>
-        <td>하루 2시간 이상</td>
-        <td>10회 이상</td>
-        <td>2회 이상</td>
-        <td>하루 2시간 이상</td>
-        <td>하루 2시간 이상</td>
-      </tr>
-      <tr>
-        <td>노출빈도</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-        <td>반복작업</td>
-      </tr>
-      <tr>
-        <td>신체부위</td>
-        <td>손, 손가락</td>
-        <td>어깨, 팔</td>
-        <td>어깨, 팔</td>
-        <td>목, 허리</td>
-        <td>다리, 무릎</td>
-        <td>손가락</td>
-        <td>손</td>
-        <td>허리</td>
-        <td>허리</td>
-        <td>허리</td>
-        <td>팔, 몸통</td>
-      </tr>
-      <tr>
-        <td>작업자세 및 내용</td>
-        <td>공구, 키보드 등 사용</td>
-        <td>팔을 머리 위로 들어올림</td>
-        <td>팔을 머리 위로 들어올림</td>
-        <td>구부리거나 비트는 자세</td>
-        <td>무릎 꿇기, 쪼그리기</td>
-        <td>반복적 손작업</td>
-        <td>반복적 손작업</td>
-        <td>중량물 들기</td>
-        <td>중량물 들기</td>
-        <td>중량물 들기</td>
-        <td>팔을 머리 위로 들어올림</td>
-      </tr>
-      <tr>
-        <td>무게</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>1kg이상인 물건</td>
-        <td>4.5kg이상인 물건</td>
-        <td>25kg이상</td>
-        <td>10kg이상</td>
-        <td>4.5kg이상</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-    </table>
-    </div>
-    """, unsafe_allow_html=True)
+    # 1~11호 설명을 한 줄로 표기
+    ho_desc = [
+        "하루 4시간 이상, 반복작업, 손/손가락, 공구·키보드 등 사용, -",
+        "하루 4시간 이상, 반복작업, 어깨/팔, 팔 머리 위로, -",
+        "하루 4시간 이상, 반복작업, 어깨/팔, 팔 머리 위로, -",
+        "하루 2시간 이상, 반복작업, 목/허리, 구부리기·비틀기, 1kg이상",
+        "하루 2시간 이상, 반복작업, 다리/무릎, 무릎꿇기·쪼그리기, 4.5kg이상",
+        "하루 2시간 이상, 반복작업, 손가락, 반복적 손작업, 25kg이상",
+        "하루 2시간 이상, 반복작업, 손, 반복적 손작업, 10kg이상",
+        "10회 이상, 반복작업, 허리, 중량물 들기, 4.5kg이상",
+        "2회 이상, 반복작업, 허리, 중량물 들기, -",
+        "하루 2시간 이상, 반복작업, 허리, 중량물 들기, -",
+        "하루 2시간 이상, 반복작업, 팔/몸통, 팔 머리 위로, -"
+    ]
+    # 설명 행을 표로 출력
+    st.markdown(
+        "<div style='overflow-x:auto;'>"
+        "<table style='width:100%; text-align:center; font-size:12px; border-collapse:collapse;'>"
+        "<tr>"
+        "<th style='border:1px solid #ccc;'></th>"*6 +
+        "".join([f"<th style='border:1px solid #ccc;'>{desc}</th>" for desc in ho_desc]) +
+        "</tr>"
+        "</table></div>",
+        unsafe_allow_html=True
+    )
 
     # 실제 입력 테이블
     columns = [
