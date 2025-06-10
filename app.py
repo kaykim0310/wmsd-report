@@ -97,132 +97,66 @@ with tabs[2]:
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
 
 with tabs[3]:
-    st.title("작업조건조사 (인간공학적 측면)")
+   import streamlit as st
+import pandas as pd
 
-    st.markdown("""
-    <style>
-    .tb1, .tb1 th, .tb1 td {
-        border: 1px solid #000;
-        border-collapse: collapse;
-        padding: 6px 10px;
-        font-size: 16px;
-    }
-    .tb1 th {
-        background: #f3f3f3;
-        width: 140px;
-        text-align: left;
-    }
-    .tb1 {
-        width: 100%;
-        margin-bottom: 16px;
-    }
-    .tb2, .tb2 th, .tb2 td {
-        border: 1px solid #000;
-        border-collapse: collapse;
-        padding: 4px 8px;
-        font-size: 15px;
-        text-align: center;
-    }
-    .tb2 th {
-        background: #f3f3f3;
-    }
-    .tb2 {
-        width: 100%;
-        margin-bottom: 16px;
-    }
-    .tb3, .tb3 th, .tb3 td {
-        border: 1px solid #000;
-        border-collapse: collapse;
-        padding: 4px 8px;
-        font-size: 15px;
-        text-align: center;
-    }
-    .tb3 th {
-        background: #f3f3f3;
-    }
-    .tb3 {
-        width: 100%;
-        margin-bottom: 16px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+st.title("작업조건조사 (인간공학적 측면)")
 
-    # 1단계 표
-    st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    st.markdown("""
-    <table class="tb1">
-        <tr>
-            <th>작업명</th>
-            <td>{작업명}</td>
-        </tr>
-        <tr>
-            <th>작업내용<br>(단위작업명)</th>
-            <td>{작업내용}</td>
-        </tr>
-    </table>
-    """.format(
-        작업명=st.text_input("작업명", key="작업명1", label_visibility="collapsed"),
-        작업내용=st.text_area("작업내용(단위작업명)", key="작업내용1", label_visibility="collapsed")
-    ), unsafe_allow_html=True)
+st.markdown("#### 1단계 : 작업별 주요 작업내용")
+작업명 = st.text_input("작업명")
+작업내용 = st.text_area("작업내용(단위작업명)")
 
-    # 2단계 기준표
-    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
-    st.markdown("""
-    <table class="tb2">
-        <tr>
-            <th rowspan="5">작업부하</th>
-            <td>매우쉬움</td><td>1</td>
-            <th rowspan="5">작업빈도</th>
-            <td>3개월마다(년 2~3회)</td><td>1</td>
-        </tr>
-        <tr>
-            <td>쉬움</td><td>2</td>
-            <td>가끔(하루 또는 주2~3일에 1회)</td><td>2</td>
-        </tr>
-        <tr>
-            <td>약간 힘듦</td><td>3</td>
-            <td>자주(1일 4시간)</td><td>3</td>
-        </tr>
-        <tr>
-            <td>힘듦</td><td>4</td>
-            <td>계속(1일 4시간 이상)</td><td>4</td>
-        </tr>
-        <tr>
-            <td>매우 힘듦</td><td>5</td>
-            <td>초과근무 시간(1일 8시간 이상)</td><td>5</td>
-        </tr>
-    </table>
-    """, unsafe_allow_html=True)
+st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
 
-    # 2단계 입력표
-    st.markdown("""
-    <table class="tb3">
-        <tr>
-            <th>단위작업명</th>
-            <th>부담작업(호)</th>
-            <th>작업부하(A)</th>
-            <th>작업빈도(B)</th>
-            <th>총점</th>
-        </tr>
-    """, unsafe_allow_html=True)
+row_count = 7
+부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
+빈도옵션 = ["", "3개월마다(년 2-3회)((1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간이상)(4)", "초과근무(1일 8시간이상)(5)"]
 
-    row_count = 7
-    부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
-    빈도옵션 = ["", "3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"]
+# 데이터프레임 생성
+data = pd.DataFrame({
+    "단위작업명": ["" for _ in range(row_count)],
+    "부담작업(호)": ["" for _ in range(row_count)],
+    "작업부하(A)": ["" for _ in range(row_count)],
+    "작업빈도(B)": ["" for _ in range(row_count)],
+    "총점": ["" for _ in range(row_count)],
+})
 
-    for i in range(row_count):
-        cols = st.columns([2, 2, 2, 2, 1], gap="small")
-        with cols[0]:
-            단위작업명 = st.text_input("", key=f"unit_{i}", label_visibility="collapsed")
-        with cols[1]:
-            부담호 = st.text_input("", key=f"ho_{i}", label_visibility="collapsed")
-        with cols[2]:
-            부하 = st.selectbox("", 부하옵션, key=f"부하_{i}", label_visibility="collapsed")
-            a_val = int(부하.split("(")[-1].replace(")", "")) if "(" in 부하 else 0
-        with cols[3]:
-            빈도 = st.selectbox("", 빈도옵션, key=f"빈도_{i}", label_visibility="collapsed")
-            b_val = int(빈도.split("(")[-1].replace(")", "")) if "(" in 빈도 else 0
-        with cols[4]:
-            st.write(a_val * b_val if a_val and b_val else "")
+# 컬럼 설정
+column_config = {
+    "단위작업명": st.column_config.TextColumn("단위작업명", width="medium"),
+    "부담작업(호)": st.column_config.TextColumn("부담작업(호)", width="medium"),
+    "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, width="medium"),
+    "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, width="medium"),
+    "총점": st.column_config.TextColumn("총점", width="medium", disabled=True),
+}
 
-    st.markdown("</table>", unsafe_allow_html=True)
+edited_df = st.data_editor(
+    data,
+    column_config=column_config,
+    num_rows="dynamic",
+    use_container_width=True,
+    hide_index=True,
+    key="작업조건조사표"
+)
+
+# 총점 자동계산
+for i in range(len(edited_df)):
+    a = edited_df.loc[i, "작업부하(A)"]
+    b = edited_df.loc[i, "작업빈도(B)"]
+    try:
+        a_val = int(a.split("(")[-1].replace(")", "")) if "(" in str(a) else 0
+        b_val = int(b.split("(")[-1].replace(")", "")) if "(" in str(b) else 0
+        edited_df.loc[i, "총점"] = str(a_val * b_val) if a_val and b_val else ""
+    except Exception:
+        edited_df.loc[i, "총점"] = ""
+
+# 표 다시 출력 (총점 반영)
+st.data_editor(
+    edited_df,
+    column_config=column_config,
+    num_rows="dynamic",
+    use_container_width=True,
+    hide_index=True,
+    key="작업조건조사표_최종",
+    disabled=["총점"]
+)
