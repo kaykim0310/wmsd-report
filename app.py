@@ -47,15 +47,18 @@ with tabs[1]:
     column_config["작업명"] = st.column_config.TextColumn("작업명")
     column_config["단위작업명"] = st.column_config.TextColumn("단위작업명")
 
-        edited_df = st.data_editor(
+    edited_df = st.data_editor(
         data,
         num_rows="dynamic",
         use_container_width=True,
         hide_index=True,
         column_config=column_config
     )
-    # 반드시 session_state에 저장!
     st.session_state["checklist_df"] = edited_df
+
+    # 입력값 확인용
+    st.write("입력된 체크리스트 데이터:")
+    st.write(st.session_state["checklist_df"])
 
 with tabs[2]:
     st.title("유해요인조사표")
