@@ -8,6 +8,7 @@ tabs = st.tabs([
     "사업장개요",
     "근골격계 부담작업 체크리스트",
     "유해요인조사표"
+    "작업조건조사"
 ])
 
 with tabs[0]:
@@ -116,3 +117,58 @@ with tabs[2]:
     for 항목 in ["작업설비", "작업량", "작업속도", "업무변화"]:
         상황조사행(항목)
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
+
+with tabs[3]:
+    st.title("작업조건조사 (인간공학적 측면)")
+
+    st.markdown("#### 1단계 : 작업별 주요 작업내용")
+    작업명 = st.text_input("작업명")
+    작업내용 = st.text_area("작업내용 (단위작업명)")
+
+    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
+
+    col1, col2, col3 = st.columns([2, 2, 1])
+    with col1:
+        작업부하 = st.radio(
+            "작업부하",
+            options=[
+                "매우쉬움 (1)", "쉬움 (2)", "약간 힘듦 (3)", "힘듦 (4)", "매우 힘듦 (5)"
+            ],
+            horizontal=False
+        )
+        작업부하점수 = int(작업부하.split("(")[-1].replace(")", ""))
+    with col2:
+        작업빈도 = st.radio(
+            "작업빈도",
+            options=[
+                "3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"
+            ],
+            horizontal=False
+        )
+        작업빈도점수 = int(작업빈도.split("(")[-1].replace(")", ""))
+    with col3:
+        st.markdown("**점수**")
+        st.write(f"작업부하(A): {작업부하점수}")
+        st.write(f"작업빈도(B): {작업빈도점수}")
+
+    st.markdown("#### 3단계 : 단위작업명별 입력")
+    columns = ["단위작업명", "부담작업(호)", "작업부하(A)", "작업빈도(B)", "총점"]
+    data = pd.DataFrame(columns=columns, data=[["", "", "", "", ""] for _ in range(8)])
+
+    edited_df = st.data_editor(
+        data,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # 총점 자동 계산
+    for i in range(len(edited_df)):
+        try:
+            a = int(edited_df.at[i, "작업부하(A)"])
+            b = int(edited_df.at[i, "작업빈도(B)"])
+            edited_df.at[i, "총점"] = a + b
+        except:
+            edited_df.at[i, "총점"] = ""
+
+    st.dataframe(edited_df, use_container_width=True, hide_index=True)
