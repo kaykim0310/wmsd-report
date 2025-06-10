@@ -64,18 +64,18 @@ with tabs[1]:
         column_config=column_config
     )
 
-    def to_excel(df):
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='체크리스트')
-        return output.getvalue()
+def to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='체크리스트')
+    return output.getvalue()
 
-    st.download_button(
-        label="엑셀로 저장",
-        data=to_excel(edited_df),
-        file_name="근골격계_부담작업_체크리스트.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+st.download_button(
+    label="엑셀로 저장",
+    data=to_excel(edited_df),
+    file_name="근골격계_부담작업_체크리스트.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 with tabs[2]:
     st.title("유해요인조사표")
