@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
+from io import Bytes io
 
 st.set_page_config(layout="wide")
 
