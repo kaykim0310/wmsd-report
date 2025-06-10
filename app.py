@@ -51,29 +51,16 @@ for i in range(행_수):
         "총점": 총점
     })
 
-
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
     columns = [
         "작업명", "단위작업명"
     ] + [f"{i}호" for i in range(1, 12)]
-    data = pd.DataFrame(columns=columns, data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)])
+    data = pd.DataFrame(
+        columns=columns,
+        data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
+    )
 
-    ho_tooltips = {
-        "1호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 손, 손가락\n작업자세 및 내용: 공구, 키보드 등 사용\n무게: -",
-        "2호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 어깨, 팔\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -",
-        "3호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 어깨, 팔\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -",
-        "4호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 목, 허리\n작업자세 및 내용: 구부리거나 비트는 자세\n무게: 1kg이상",
-        "5호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 다리, 무릎\n작업자세 및 내용: 무릎 꿇기, 쪼그리기\n무게: 4.5kg이상",
-        "6호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 손가락\n작업자세 및 내용: 반복적 손작업\n무게: 25kg이상",
-        "7호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 손\n작업자세 및 내용: 반복적 손작업\n무게: 10kg이상",
-        "8호": "노출시간: 10회 이상\n노출빈도: 반복작업\n신체부위: 허리\n작업자세 및 내용: 중량물 들기\n무게: 4.5kg이상",
-        "9호": "노출시간: 2회 이상\n노출빈도: 반복작업\n신체부위: 허리\n작업자세 및 내용: 중량물 들기\n무게: -",
-        "10호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 허리\n작업자세 및 내용: 중량물 들기\n무게: -",
-        "11호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 팔, 몸통\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -"
-    }
-
-    # 드롭다운 옵션
     ho_options = [
         "O(해당)",
         "△(잠재위험)",
@@ -94,21 +81,6 @@ with tabs[1]:
         hide_index=True,
         column_config=column_config
     )
-
-def to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='체크리스트')
-    return output.getvalue()
-
-st.download_button(
-    label="엑셀로 저장",
-    data=to_excel(edited_df),
-    file_name="근골격계_부담작업_체크리스트.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
-    # 체크리스트 데이터 session_state에 저장
     st.session_state["checklist_df"] = edited_df
 
 with tabs[2]:
@@ -152,65 +124,34 @@ with tabs[2]:
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
 
 with tabs[3]:
-    st.title("작업조건조사 (인간공학적 측면)")
+    st.subheader("2단계: 작업별 작업부하 및 작업빈도")
+    data = pd.DataFrame({
+        "단위작업명": ["" for _ in range(5)],
+        "부담작업(호)": ["" for _ in range(5)],
+        "작업부하(A)": ["" for _ in range(5)],
+        "작업빈도(B)": ["" for _ in range(5)],
+        "총점": ["" for _ in range(5)],
+    })
 
-    st.markdown("#### 1단계 : 작업별 주요 작업내용")
-     # 여러 작업명 중 첫 번째만 예시로 사용 (여러 작업명 확장 가능)
-    작업명_list = st.session_state["checklist_df"]["작업명"].dropna().unique().tolist()
-    if 작업명_list:
-        작업명 = st.selectbox("작업명", 작업명_list, key="작업조건조사_작업명")
-    else:
-        작업명 = st.text_input("작업명", key="작업조건조사_작업명")
+    부하옵션 = [
+        "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"
+    ]
+    빈도옵션 = [
+        "3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"
+    ]
 
-    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
+    column_config = {
+        "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, required=True),
+        "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, required=True),
+        "단위작업명": st.column_config.TextColumn("단위작업명"),
+        "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
+        "총점": st.column_config.TextColumn("총점"),
+    }
 
-data = pd.DataFrame({
-    "단위작업명": ["" for _ in range(5)],
-    "부담작업(호)": ["" for _ in range(5)],
-    "작업부하(A)": ["" for _ in range(5)],
-    "작업빈도(B)": ["" for _ in range(5)],
-    "총점": ["" for _ in range(5)],
-})
-
-# 드롭다운 옵션
-부하옵션 = [
-    "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"
-]
-빈도옵션 = [
-    "3개월마다(년 2-3회)(1)", "가끔(하루 또는 주2-3회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간 이상)(4)", "초과근무(1일 8시간이상)(5)"
-]
-
-column_config = {
-    "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, required=True),
-    "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, required=True),
-    "단위작업명": st.column_config.TextColumn("단위작업명"),
-    "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
-    "총점": st.column_config.TextColumn("총점"),
-}
-
-edited_df = st.data_editor(
-    data,
-    num_rows="dynamic",
-    use_container_width=True,
-    hide_index=True,
-    column_config=column_config
-)
-
-# 총점 자동계산 (선택)
-for i in range(len(edited_df)):
-    try:
-        a = int(edited_df.loc[i, "작업부하(A)"].split("(")[-1].replace(")", ""))
-        b = int(edited_df.loc[i, "작업빈도(B)"].split("(")[-1].replace(")", ""))
-        edited_df.loc[i, "총점"] = str(a * b)
-    except Exception:
-        edited_df.loc[i, "총점"] = ""
-
-st.data_editor(
-    edited_df,
-    num_rows="dynamic",
-    use_container_width=True,
-    hide_index=True,
-    column_config=column_config,
-    disabled=["총점"]  # 총점은 직접 입력 못하게
-)
-    st.dataframe(edited_df, use_container_width=True, hide_index=True)
+    edited_df = st.data_editor(
+        data,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        column_config=column_config
+    )
