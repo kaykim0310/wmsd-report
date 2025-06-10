@@ -99,42 +99,130 @@ with tabs[2]:
 with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
 
-    st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    if "checklist_df" in st.session_state:
-        checklist_df = st.session_state["checklist_df"]
-        st.dataframe(checklist_df[["작업명", "단위작업명"]], use_container_width=True, hide_index=True)
-    else:
-        st.info("체크리스트 탭에서 작업명을 먼저 입력하세요.")
+    st.markdown("""
+    <style>
+    .tb1, .tb1 th, .tb1 td {
+        border: 1px solid #000;
+        border-collapse: collapse;
+        padding: 6px 10px;
+        font-size: 16px;
+    }
+    .tb1 th {
+        background: #f3f3f3;
+        width: 140px;
+        text-align: left;
+    }
+    .tb1 {
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    .tb2, .tb2 th, .tb2 td {
+        border: 1px solid #000;
+        border-collapse: collapse;
+        padding: 4px 8px;
+        font-size: 15px;
+        text-align: center;
+    }
+    .tb2 th {
+        background: #f3f3f3;
+    }
+    .tb2 {
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    .tb3, .tb3 th, .tb3 td {
+        border: 1px solid #000;
+        border-collapse: collapse;
+        padding: 4px 8px;
+        font-size: 15px;
+        text-align: center;
+    }
+    .tb3 th {
+        background: #f3f3f3;
+    }
+    .tb3 {
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
+    # 1단계 표
+    st.markdown("#### 1단계 : 작업별 주요 작업내용")
+    st.markdown("""
+    <table class="tb1">
+        <tr>
+            <th>작업명</th>
+            <td>{작업명}</td>
+        </tr>
+        <tr>
+            <th>작업내용<br>(단위작업명)</th>
+            <td>{작업내용}</td>
+        </tr>
+    </table>
+    """.format(
+        작업명=st.text_input("작업명", key="작업명1", label_visibility="collapsed"),
+        작업내용=st.text_area("작업내용(단위작업명)", key="작업내용1", label_visibility="collapsed")
+    ), unsafe_allow_html=True)
+
+    # 2단계 기준표
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
-    if "checklist_df" in st.session_state:
-        checklist_df = st.session_state["checklist_df"]
-        부하옵션 = [
-            "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"
-        ]
-        빈도옵션 = [
-            "3개월마다((년 2-3회)1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간 이상)(4)", "초과근무(1일 8시간 이상)(5)"
-        ]
-        for idx, row in checklist_df.iterrows():
-            단위작업명 = row["단위작업명"]
-            if not 단위작업명: continue
-            col1, col2, col3, col4, col5 = st.columns([3, 3, 2, 2, 2])
-            with col1:
-                st.write(단위작업명)
-            with col2:
-                부담호 = [f"{i+1}" for i, v in enumerate([row[f"{i}호"] for i in range(1, 12)]) if v.startswith("O")]
-                st.write(", ".join(부담호))
-            with col3:
-                a = st.selectbox(
-                    "작업부하", 부하옵션, key=f"{단위작업명}_부하"
-                )
-                a_val = int(a.split("(")[-1].replace(")", ""))
-            with col4:
-                b = st.selectbox(
-                    "작업빈도", 빈도옵션, key=f"{단위작업명}_빈도"
-                )
-                b_val = int(b.split("(")[-1].replace(")", ""))
-            with col5:
-                st.write(f"{a_val * b_val}")
-    else:
-        st.info("체크리스트 탭에서 작업명을 먼저 입력하세요.")
+    st.markdown("""
+    <table class="tb2">
+        <tr>
+            <th rowspan="5">작업부하</th>
+            <td>매우쉬움</td><td>1</td>
+            <th rowspan="5">작업빈도</th>
+            <td>3개월마다(년 2~3회)</td><td>1</td>
+        </tr>
+        <tr>
+            <td>쉬움</td><td>2</td>
+            <td>가끔(하루 또는 주2~3일에 1회)</td><td>2</td>
+        </tr>
+        <tr>
+            <td>약간 힘듦</td><td>3</td>
+            <td>자주(1일 4시간)</td><td>3</td>
+        </tr>
+        <tr>
+            <td>힘듦</td><td>4</td>
+            <td>계속(1일 4시간 이상)</td><td>4</td>
+        </tr>
+        <tr>
+            <td>매우 힘듦</td><td>5</td>
+            <td>초과근무 시간(1일 8시간 이상)</td><td>5</td>
+        </tr>
+    </table>
+    """, unsafe_allow_html=True)
+
+    # 2단계 입력표
+    st.markdown("""
+    <table class="tb3">
+        <tr>
+            <th>단위작업명</th>
+            <th>부담작업(호)</th>
+            <th>작업부하(A)</th>
+            <th>작업빈도(B)</th>
+            <th>총점</th>
+        </tr>
+    """, unsafe_allow_html=True)
+
+    row_count = 7
+    부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
+    빈도옵션 = ["", "3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"]
+
+    for i in range(row_count):
+        cols = st.columns([2, 2, 2, 2, 1], gap="small")
+        with cols[0]:
+            단위작업명 = st.text_input("", key=f"unit_{i}", label_visibility="collapsed")
+        with cols[1]:
+            부담호 = st.text_input("", key=f"ho_{i}", label_visibility="collapsed")
+        with cols[2]:
+            부하 = st.selectbox("", 부하옵션, key=f"부하_{i}", label_visibility="collapsed")
+            a_val = int(부하.split("(")[-1].replace(")", "")) if "(" in 부하 else 0
+        with cols[3]:
+            빈도 = st.selectbox("", 빈도옵션, key=f"빈도_{i}", label_visibility="collapsed")
+            b_val = int(빈도.split("(")[-1].replace(")", "")) if "(" in 빈도 else 0
+        with cols[4]:
+            st.write(a_val * b_val if a_val and b_val else "")
+
+    st.markdown("</table>", unsafe_allow_html=True)
