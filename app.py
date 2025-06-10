@@ -107,13 +107,13 @@ with tabs[3]:
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
     if "checklist_df" in st.session_state:
         checklist_df = st.session_state["checklist_df"]
-        # 작업명/단위작업명 리스트 추출
-        작업명_list = checklist_df["작업명"].dropna().unique().tolist()
-        단위작업명_list = checklist_df["단위작업명"].dropna().unique().tolist()
-        st.write("작업명 목록:", 작업명_list)
-        st.write("단위작업명 목록:", 단위작업명_list)
-        # 표로 보여주기
-        st.dataframe(checklist_df[["작업명", "단위작업명"]], use_container_width=True, hide_index=True)
+        # 빈 값 제외
+        filtered_df = checklist_df[
+            (checklist_df["작업명"].astype(str).str.strip() != "") &
+            (checklist_df["단위작업명"].astype(str).str.strip() != "")
+        ]
+        # 표로만 보여주기
+        st.dataframe(filtered_df[["작업명", "단위작업명"]], use_container_width=True, hide_index=True)
     else:
         st.info("체크리스트 탭에서 작업명을 먼저 입력하세요.")
 
@@ -121,18 +121,19 @@ with tabs[3]:
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
     if "checklist_df" in st.session_state:
         checklist_df = st.session_state["checklist_df"]
-        # 단위작업명별로 표 생성
+        filtered_df = checklist_df[
+            (checklist_df["작업명"].astype(str).str.strip() != "") &
+            (checklist_df["단위작업명"].astype(str).str.strip() != "")
+        ]
         부하옵션 = [
             "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"
         ]
         빈도옵션 = [
-            "3개월마다(년2-3회)((1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간 이상)(4)", "초과근무(1일 8시간 이상)(5)"
+            "3개월마다(년2-3회)(1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간 이상)(4)", "초과근무(1일 8시간 이상)(5)"
         ]
-        rows = []
-        for idx, row in checklist_df.iterrows():
+        for idx, row in filtered_df.iterrows():
             단위작업명 = row["단위작업명"]
-            if not 단위작업명: continue
-            col1, col2, col3, col4, col5 = st.columns([3, 3, 2, 2, 2])
+            col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
             with col1:
                 st.write(단위작업명)
             with col2:
@@ -149,7 +150,6 @@ with tabs[3]:
                     "작업빈도", 빈도옵션, key=f"{단위작업명}_빈도"
                 )
                 b_val = int(b.split("(")[-1].replace(")", ""))
-            with col5:
-                st.write(f"{a_val * b_val}")
+            st.write(f"총점: {a_val * b_val}")
     else:
         st.info("체크리스트 탭에서 작업명을 먼저 입력하세요.")
