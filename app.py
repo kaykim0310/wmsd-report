@@ -24,14 +24,40 @@ with tabs[0]:
         본조사 = st.date_input("본조사일")
         성명 = st.text_input("성명")
 
+st.subheader("2단계: 작업별 작업부하 및 작업빈도")
+
+행_수 = 5  # 원하는 행 개수로 조정
+작업부하_옵션 = ["", "1", "2", "3", "4", "5"]  # 예시 옵션, 실제 값으로 수정 가능
+작업빈도_옵션 = ["", "1", "2", "3", "4", "5"]
+
+rows = []
+for i in range(행_수):
+    cols = st.columns([2, 2, 2, 2, 2, 2])
+    with cols[0]:
+        단위작업명 = st.text_input("단위작업명", key=f"단위작업명_{i}")
+    with cols[1]:
+        부담작업호 = st.text_input("부담작업(호)", key=f"부담작업호_{i}")
+    with cols[2]:
+        작업부하 = st.selectbox("작업부하(A)", 작업부하_옵션, key=f"작업부하_{i}")
+    with cols[3]:
+        작업빈도 = st.selectbox("작업빈도(B)", 작업빈도_옵션, key=f"작업빈도_{i}")
+    with cols[4]:
+        총점 = st.text_input("총점", key=f"총점_{i}")
+    rows.append({
+        "단위작업명": 단위작업명,
+        "부담작업(호)": 부담작업호,
+        "작업부하(A)": 작업부하,
+        "작업빈도(B)": 작업빈도,
+        "총점": 총점
+    })
+
+
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
-
     columns = [
-        "부", "팀", "작업명", "단위작업명", "일일 해당작업 시간", "중량(kg)",
-        "1호", "2호", "3호", "4호", "5호", "6호", "7호", "8호", "9호", "10호", "11호"
-    ]
-    data = pd.DataFrame(columns=columns, data=[[""]*len(columns) for _ in range(5)])
+        "작업명", "단위작업명"
+    ] + [f"{i}호" for i in range(1, 12)]
+    data = pd.DataFrame(columns=columns, data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)])
 
     ho_tooltips = {
         "1호": "노출시간: 하루 4시간 이상\n노출빈도: 반복작업\n신체부위: 손, 손가락\n작업자세 및 내용: 공구, 키보드 등 사용\n무게: -",
@@ -47,15 +73,19 @@ with tabs[1]:
         "11호": "노출시간: 하루 2시간 이상\n노출빈도: 반복작업\n신체부위: 팔, 몸통\n작업자세 및 내용: 팔을 머리 위로 들어올림\n무게: -"
     }
 
-    column_config = {}
-    for col in columns:
-        if col in ho_tooltips:
-            column_config[col] = st.column_config.TextColumn(
-                col,
-                help=ho_tooltips[col]
-            )
-        else:
-            column_config[col] = st.column_config.TextColumn(col)
+    # 드롭다운 옵션
+    ho_options = [
+        "O(해당)",
+        "△(잠재위험)",
+        "X(미해당)"
+    ]
+    column_config = {
+        f"{i}호": st.column_config.SelectboxColumn(
+            f"{i}호", options=ho_options, required=True
+        ) for i in range(1, 12)
+    }
+    column_config["작업명"] = st.column_config.TextColumn("작업명")
+    column_config["단위작업명"] = st.column_config.TextColumn("단위작업명")
 
     edited_df = st.data_editor(
         data,
@@ -77,6 +107,9 @@ st.download_button(
     file_name="근골격계_부담작업_체크리스트.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
+    # 체크리스트 데이터 session_state에 저장
+    st.session_state["checklist_df"] = edited_df
 
 with tabs[2]:
     st.title("유해요인조사표")
@@ -122,53 +155,45 @@ with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
 
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    작업명 = st.text_input("작업명", key="tab3_작업명")
-    작업내용 = st.text_area("작업내용 (단위작업명)")
+     # 여러 작업명 중 첫 번째만 예시로 사용 (여러 작업명 확장 가능)
+    작업명_list = st.session_state["checklist_df"]["작업명"].dropna().unique().tolist()
+    if 작업명_list:
+        작업명 = st.selectbox("작업명", 작업명_list, key="작업조건조사_작업명")
+    else:
+        작업명 = st.text_input("작업명", key="작업조건조사_작업명")
 
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
 
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        작업부하 = st.radio(
-            "작업부하",
-            options=[
-                "매우쉬움 (1)", "쉬움 (2)", "약간 힘듦 (3)", "힘듦 (4)", "매우 힘듦 (5)"
-            ],
-            horizontal=False
-        )
-        작업부하점수 = int(작업부하.split("(")[-1].replace(")", ""))
-    with col2:
-        작업빈도 = st.radio(
-            "작업빈도",
-            options=[
-                "3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"
-            ],
-            horizontal=False
-        )
-        작업빈도점수 = int(작업빈도.split("(")[-1].replace(")", ""))
-    with col3:
-        st.markdown("**점수**")
-        st.write(f"작업부하(A): {작업부하점수}")
-        st.write(f"작업빈도(B): {작업빈도점수}")
+    # 2단계 바로 아래 표
+    st.markdown("#### 단위작업명별 입력")
+    # 체크리스트에서 선택된 작업명에 해당하는 단위작업명만 추출
+    if 작업명:
+        filtered = st.session_state["checklist_df"][st.session_state["checklist_df"]["작업명"] == 작업명]
+        table_data = []
+        for idx, row in filtered.iterrows():
+            단위작업명 = row["단위작업명"]
+            # 부담작업(호): O(해당)만 콤마로
+            부담호 = [f"{i+1}" for i, v in enumerate([row[f"{i}호"] for i in range(1, 12)]) if v.startswith("O")]
+            # 드롭다운(작업부하/작업빈도)
+            col1, col2, col3, col4, col5 = st.columns([3, 3, 2, 2, 2])
+            with col1:
+                st.write(단위작업명)
+            with col2:
+                st.write(", ".join(부담호))
+            with col3:
+                a = st.selectbox(
+                    "작업부하", ["매우쉬움 (1)", "쉬움 (2)", "약간 힘듦 (3)", "힘듦 (4)", "매우 힘듦 (5)"],
+                    key=f"{작업명}_{단위작업명}_부하"
+                )
+                a_val = int(a.split("(")[-1].replace(")", ""))
+            with col4:
+                b = st.selectbox(
+                    "작업빈도", ["3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"],
+                    key=f"{작업명}_{단위작업명}_빈도"
+                )
+                b_val = int(b.split("(")[-1].replace(")", ""))
+            with col5:
+                st.write(f"{a_val * b_val}")
 
-    st.markdown("#### 3단계 : 단위작업명별 입력")
-    columns = ["단위작업명", "부담작업(호)", "작업부하(A)", "작업빈도(B)", "총점"]
-    data = pd.DataFrame(columns=columns, data=[["", "", "", "", ""] for _ in range(8)])
-
-    edited_df = st.data_editor(
-        data,
-        num_rows="dynamic",
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # 총점 자동 계산
-    for i in range(len(edited_df)):
-        try:
-            a = int(edited_df.at[i, "작업부하(A)"])
-            b = int(edited_df.at[i, "작업빈도(B)"])
-            edited_df.at[i, "총점"] = a + b
-        except:
-            edited_df.at[i, "총점"] = ""
 
     st.dataframe(edited_df, use_container_width=True, hide_index=True)
