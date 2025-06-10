@@ -164,36 +164,53 @@ with tabs[3]:
 
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
 
-    # 2단계 바로 아래 표
-    st.markdown("#### 단위작업명별 입력")
-    # 체크리스트에서 선택된 작업명에 해당하는 단위작업명만 추출
-    if 작업명:
-        filtered = st.session_state["checklist_df"][st.session_state["checklist_df"]["작업명"] == 작업명]
-        table_data = []
-        for idx, row in filtered.iterrows():
-            단위작업명 = row["단위작업명"]
-            # 부담작업(호): O(해당)만 콤마로
-            부담호 = [f"{i+1}" for i, v in enumerate([row[f"{i}호"] for i in range(1, 12)]) if v.startswith("O")]
-            # 드롭다운(작업부하/작업빈도)
-            col1, col2, col3, col4, col5 = st.columns([3, 3, 2, 2, 2])
-            with col1:
-                st.write(단위작업명)
-            with col2:
-                st.write(", ".join(부담호))
-            with col3:
-                a = st.selectbox(
-                    "작업부하", ["매우쉬움 (1)", "쉬움 (2)", "약간 힘듦 (3)", "힘듦 (4)", "매우 힘듦 (5)"],
-                    key=f"{작업명}_{단위작업명}_부하"
-                )
-                a_val = int(a.split("(")[-1].replace(")", ""))
-            with col4:
-                b = st.selectbox(
-                    "작업빈도", ["3개월마다(1)", "가끔(2)", "자주(3)", "계속(4)", "초과근무(5)"],
-                    key=f"{작업명}_{단위작업명}_빈도"
-                )
-                b_val = int(b.split("(")[-1].replace(")", ""))
-            with col5:
-                st.write(f"{a_val * b_val}")
+data = pd.DataFrame({
+    "단위작업명": ["" for _ in range(5)],
+    "부담작업(호)": ["" for _ in range(5)],
+    "작업부하(A)": ["" for _ in range(5)],
+    "작업빈도(B)": ["" for _ in range(5)],
+    "총점": ["" for _ in range(5)],
+})
 
+# 드롭다운 옵션
+부하옵션 = [
+    "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"
+]
+빈도옵션 = [
+    "3개월마다(년 2-3회)(1)", "가끔(하루 또는 주2-3회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간 이상)(4)", "초과근무(1일 8시간이상)(5)"
+]
 
+column_config = {
+    "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, required=True),
+    "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, required=True),
+    "단위작업명": st.column_config.TextColumn("단위작업명"),
+    "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
+    "총점": st.column_config.TextColumn("총점"),
+}
+
+edited_df = st.data_editor(
+    data,
+    num_rows="dynamic",
+    use_container_width=True,
+    hide_index=True,
+    column_config=column_config
+)
+
+# 총점 자동계산 (선택)
+for i in range(len(edited_df)):
+    try:
+        a = int(edited_df.loc[i, "작업부하(A)"].split("(")[-1].replace(")", ""))
+        b = int(edited_df.loc[i, "작업빈도(B)"].split("(")[-1].replace(")", ""))
+        edited_df.loc[i, "총점"] = str(a * b)
+    except Exception:
+        edited_df.loc[i, "총점"] = ""
+
+st.data_editor(
+    edited_df,
+    num_rows="dynamic",
+    use_container_width=True,
+    hide_index=True,
+    column_config=column_config,
+    disabled=["총점"]  # 총점은 직접 입력 못하게
+)
     st.dataframe(edited_df, use_container_width=True, hide_index=True)
