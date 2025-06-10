@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from io import Bytes io
+from io import BytesIO
 
 st.set_page_config(layout="wide")
 
@@ -88,7 +88,7 @@ with tabs[2]:
     with col2:
         조사자 = st.text_input("조사자")
         작업공정명 = st.text_input("작업공정명")
-    작업명 = st.text_input("작업명")
+    작업명 = st.text_input("작업명", key="tab2_작업명")
 
     st.markdown("#### 나. 작업장 상황조사")
 
@@ -122,7 +122,7 @@ with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
 
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    작업명 = st.text_input("작업명")
+    작업명 = st.text_input("작업명", key="tab3_작업명")
     작업내용 = st.text_area("작업내용 (단위작업명)")
 
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
