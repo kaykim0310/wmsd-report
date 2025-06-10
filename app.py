@@ -24,33 +24,6 @@ with tabs[0]:
         본조사 = st.date_input("본조사일")
         성명 = st.text_input("성명")
 
-st.subheader("2단계: 작업별 작업부하 및 작업빈도")
-
-행_수 = 5  # 원하는 행 개수로 조정
-작업부하_옵션 = ["", "1", "2", "3", "4", "5"]  # 예시 옵션, 실제 값으로 수정 가능
-작업빈도_옵션 = ["", "1", "2", "3", "4", "5"]
-
-rows = []
-for i in range(행_수):
-    cols = st.columns([2, 2, 2, 2, 2, 2])
-    with cols[0]:
-        단위작업명 = st.text_input("단위작업명", key=f"단위작업명_{i}")
-    with cols[1]:
-        부담작업호 = st.text_input("부담작업(호)", key=f"부담작업호_{i}")
-    with cols[2]:
-        작업부하 = st.selectbox("작업부하(A)", 작업부하_옵션, key=f"작업부하_{i}")
-    with cols[3]:
-        작업빈도 = st.selectbox("작업빈도(B)", 작업빈도_옵션, key=f"작업빈도_{i}")
-    with cols[4]:
-        총점 = st.text_input("총점", key=f"총점_{i}")
-    rows.append({
-        "단위작업명": 단위작업명,
-        "부담작업(호)": 부담작업호,
-        "작업부하(A)": 작업부하,
-        "작업빈도(B)": 작업빈도,
-        "총점": 총점
-    })
-
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
     columns = [
