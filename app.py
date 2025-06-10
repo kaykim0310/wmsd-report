@@ -26,6 +26,46 @@ with tabs[0]:
 
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
+
+
+# 예시: 체크리스트에서 작업명 리스트 추출
+작업명_list = ["A", "B"]  # 실제로는 session_state["checklist_df"]["작업명"].dropna().unique().tolist()
+
+# 현재 작업명 인덱스 (session_state로 관리)
+if "작업명_idx" not in st.session_state:
+    st.session_state["작업명_idx"] = 0
+
+# 현재 작업명
+if 작업명_list:
+    작업명 = 작업명_list[st.session_state["작업명_idx"]]
+else:
+    st.warning("작업명이 없습니다.")
+    st.stop()
+
+# 1단계 표 (HTML로 구현)
+st.markdown(f"""
+<table style="border-collapse:collapse; width:60%;">
+    <tr>
+        <th style="border:1px solid #000; background:#eee; width:20%;">작업명</th>
+        <td style="border:1px solid #000;">{작업명}</td>
+    </tr>
+    <tr>
+        <th style="border:1px solid #000; background:#eee;">작업내용<br>(단위작업명)</th>
+        <td style="border:1px solid #000;">
+            {" , ".join(['A1', 'A2']) if 작업명=='A' else "B1"}  <!-- 실제로는 체크리스트에서 추출 -->
+        </td>
+    </tr>
+</table>
+""", unsafe_allow_html=True)
+
+# 다음 작업명으로 이동 버튼
+if st.button("다음 작업명으로"):
+    if st.session_state["작업명_idx"] < len(작업명_list) - 1:
+        st.session_state["작업명_idx"] += 1
+        st.experimental_rerun()
+    else:
+        st.success("모든 작업명 입력 완료!")
+    
     columns = [
         "작업명", "단위작업명"
     ] + [f"{i}호" for i in range(1, 12)]
