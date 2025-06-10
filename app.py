@@ -91,48 +91,59 @@ with tabs[2]:
 
     st.markdown("#### 나. 작업장 상황조사")
 
-    # 표 헤더
+    # 표 헤더 (각 셀 동일 너비)
     st.markdown("""
     <table border="1" style="width:100%; border-collapse:collapse; text-align:center;">
       <tr style="background-color:#f2f2f2;">
-        <th style="width:10%;">구분</th>
-        <th style="width:12%;">변화없음</th>
-        <th style="width:18%;">변화있음<br>(언제부터)</th>
-        <th style="width:18%;">줄음<br>(언제부터)</th>
-        <th style="width:18%;">늘어남<br>(언제부터)</th>
-        <th style="width:18%;">기타</th>
+        <th style="width:16.6%;">구분</th>
+        <th style="width:16.6%;">변화없음</th>
+        <th style="width:16.6%;">변화있음</th>
+        <th style="width:16.6%;">감소</th>
+        <th style="width:16.6%;">증가</th>
+        <th style="width:16.6%;">기타</th>
       </tr>
     </table>
     """, unsafe_allow_html=True)
 
     def 상황조사행(항목명):
-        cols = st.columns([1, 1, 2, 2, 2, 2])
+        cols = st.columns([1, 1, 1, 1, 1, 1])
+        # 변화없음/변화있음 라디오버튼
         with cols[0]:
             st.markdown(f"<div style='text-align:center; font-weight:bold; padding-top:0.7em;'>{항목명}</div>", unsafe_allow_html=True)
         with cols[1]:
-            st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
-            변화없음 = st.checkbox("", key=f"{항목명}_변화없음")
-            st.markdown("</div>", unsafe_allow_html=True)
+            변화상태 = st.radio(
+                label="",
+                options=["변화없음", "변화있음"],
+                key=f"{항목명}_변화상태",
+                horizontal=True,
+                label_visibility="collapsed"
+            )
         with cols[2]:
-            st.markdown("<div style='display:flex; flex-direction:column; align-items:center;'>", unsafe_allow_html=True)
-            변화있음 = st.checkbox("", key=f"{항목명}_변화있음")
-            변화있음_시작 = st.text_input("", key=f"{항목명}_변화있음_시작", placeholder="언제부터", label_visibility="collapsed") if 변화있음 else ""
-            st.markdown("</div>", unsafe_allow_html=True)
+            if 변화상태 == "변화있음":
+                변화유형 = st.radio(
+                    label="",
+                    options=["감소", "증가", "기타"],
+                    key=f"{항목명}_변화유형",
+                    horizontal=True,
+                    label_visibility="collapsed"
+                )
+            else:
+                변화유형 = None
         with cols[3]:
-            st.markdown("<div style='display:flex; flex-direction:column; align-items:center;'>", unsafe_allow_html=True)
-            줄음 = st.checkbox("", key=f"{항목명}_줄음")
-            줄음_시작 = st.text_input("", key=f"{항목명}_줄음_시작", placeholder="언제부터", label_visibility="collapsed") if 줄음 else ""
-            st.markdown("</div>", unsafe_allow_html=True)
+            if 변화상태 == "변화있음" and 변화유형 == "감소":
+                감소_시작 = st.text_input("", key=f"{항목명}_감소_시작", placeholder="언제부터", label_visibility="collapsed")
+            else:
+                st.markdown("&nbsp;", unsafe_allow_html=True)
         with cols[4]:
-            st.markdown("<div style='display:flex; flex-direction:column; align-items:center;'>", unsafe_allow_html=True)
-            늘어남 = st.checkbox("", key=f"{항목명}_늘어남")
-            늘어남_시작 = st.text_input("", key=f"{항목명}_늘어남_시작", placeholder="언제부터", label_visibility="collapsed") if 늘어남 else ""
-            st.markdown("</div>", unsafe_allow_html=True)
+            if 변화상태 == "변화있음" and 변화유형 == "증가":
+                증가_시작 = st.text_input("", key=f"{항목명}_증가_시작", placeholder="언제부터", label_visibility="collapsed")
+            else:
+                st.markdown("&nbsp;", unsafe_allow_html=True)
         with cols[5]:
-            st.markdown("<div style='display:flex; flex-direction:column; align-items:center;'>", unsafe_allow_html=True)
-            기타 = st.checkbox("", key=f"{항목명}_기타")
-            기타_내용 = st.text_input("", key=f"{항목명}_기타_내용", placeholder="내용", label_visibility="collapsed") if 기타 else ""
-            st.markdown("</div>", unsafe_allow_html=True)
+            if 변화상태 == "변화있음" and 변화유형 == "기타":
+                기타_내용 = st.text_input("", key=f"{항목명}_기타_내용", placeholder="내용", label_visibility="collapsed")
+            else:
+                st.markdown("&nbsp;", unsafe_allow_html=True)
 
     for 항목 in ["작업설비", "작업량", "작업속도", "업무변화"]:
         상황조사행(항목)
