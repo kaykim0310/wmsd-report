@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 tabs = st.tabs([
     "사업장개요",
     "근골격계 부담작업 체크리스트",
-    "유해요인조사표"
+    "유해요인조사표",
     "작업조건조사"
 ])
 
