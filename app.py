@@ -66,8 +66,10 @@ with tabs[2]:
     with col2:
         조사자 = st.text_input("조사자")
         작업공정명 = st.text_input("작업공정명")
-    작업명 = st.text_input("작업명", key="tab2_작업명")
-
+    
+    # 작업명 입력은 이미 체크리스트에서 입력받기 때문에 중복 제거(혹은 별도 관리 가능)
+    # 작업명 = st.text_input("작업명", key="tab2_작업명")
+    
     st.markdown("#### 나. 작업장 상황조사")
 
     def 상황조사행(항목명):
@@ -98,6 +100,76 @@ with tabs[2]:
 
 with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
+    
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    작업명 = st.text_input("작업명", key="tab3_작업명")
-    작업내용 = st.text_area("작업내용(단위작업명)", key="tab3_작업내용")
+    # 작업명 및 작업내용(단위작업명)은 이미 체크리스트 탭에서 입력받은 값으로 관리하므로 별도 입력필드를 제거했습니다.
+    # 예시로 체크리스트에서 첫 번째 값을 표시할 수 있습니다.
+    if st.session_state.get("checklist_df") is not None:
+        df = st.session_state["checklist_df"]
+        if not df.empty:
+            st.write("**작업명:**", df["작업명"].iloc[0])
+            st.write("**작업내용(단위작업명):**", df["단위작업명"].iloc[0])
+    
+    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
+    st.markdown("""
+    - **작업부하**: 매우쉬움(1), 쉬움(2), 약간 힘듦(3), 힘듦(4), 매우 힘듦(5)
+    - **작업빈도**: 3개월마다(1), 가끔(2), 자주(3), 계속(4), 초과근무(5)
+    """)
+
+    checklist_df = st.session_state.get("checklist_df")
+    if checklist_df is not None:
+        filtered = checklist_df[["단위작업명"] + [col for col in checklist_df.columns if "호" in col]]
+        단위작업명_list = filtered["단위작업명"].tolist()
+        부담작업호_list = []
+        for idx, row in filtered.iterrows():
+            해당호 = [col for col in filtered.columns if "호" in col and row[col] == "O(해당)"]
+            부담작업호_list.append(", ".join(해당호) if 해당호 else "")
+    else:
+        단위작업명_list = ["" for _ in range(7)]
+        부담작업호_list = ["" for _ in range(7)]
+
+    row_count = max(len(단위작업명_list), 7)
+    부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
+    빈도옵션 = ["", "3개월마다(년 2-3회)(1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간이상)(4)", "초과근무(1일 8시간이상)(5)"]
+
+    data = pd.DataFrame({
+        "단위작업명": 단위작업명_list + [""] * (row_count - len(단위작업명_list)),
+        "부담작업(호)": 부담작업호_list + [""] * (row_count - len(부담작업호_list)),
+        "작업부하(A)": ["" for _ in range(row_count)],
+        "작업빈도(B)": ["" for _ in range(row_count)],
+        "총점": ["" for _ in range(row_count)],
+    })
+
+    column_config = {
+        "단위작업명": st.column_config.TextColumn("단위작업명", width="medium", disabled=True),
+        "부담작업(호)": st.column_config.TextColumn("부담작업(호)", width="medium", disabled=True),
+        "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, width="medium"),
+        "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, width="medium"),
+        "총점": st.column_config.TextColumn("총점", width="medium", disabled=True),
+    }
+
+    edited_df = st.data_editor(
+        data,
+        column_config=column_config,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        key="작업조건조사표"
+    )
+
+    total_sum = 0
+    for i in range(len(edited_df)):
+        a = edited_df.loc[i, "작업부하(A)"]
+        b = edited_df.loc[i, "작업빈도(B)"]
+        try:
+            a_val = int(a.split("(")[-1].replace(")", "")) if "(" in str(a) else 0
+            b_val = int(b.split("(")[-1].replace(")", "")) if "(" in str(b) else 0
+            score = a_val * b_val if a_val and b_val else ""
+            edited_df.loc[i, "총점"] = str(score) if score else ""
+            if score:
+                total_sum += score
+        except Exception:
+            edited_df.loc[i, "총점"] = ""
+
+    st.markdown("**총합**")
+    st.text_input("총합", value=str(total_sum), disabled=True, key="총합_자동계산")
