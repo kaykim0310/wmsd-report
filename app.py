@@ -101,23 +101,24 @@ with tabs[2]:
 with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
     
+    # 1단계: 작업별 주요 작업내용
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    st.write("여기는 1단계 콘텐츠입니다.")
-    # 작업명 및 작업내용(단위작업명)은 이미 체크리스트 탭에서 입력받은 값으로 관리하므로 별도 입력필드를 제거했습니다.
-    # 예시로 체크리스트에서 첫 번째 값을 표시할 수 있습니다.
+    st.write("---- Debug: 1단계 실행됨 ----")
     if st.session_state.get("checklist_df") is not None:
         df = st.session_state["checklist_df"]
         if not df.empty:
             st.write("**작업명:**", df["작업명"].iloc[0])
             st.write("**작업내용(단위작업명):**", df["단위작업명"].iloc[0])
     
+    # 2단계: 작업별 작업부하 및 작업빈도
     st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
-    st.write("여기는 2단계 콘텐츠입니다.")
+    st.write("---- Debug: 2단계 실행됨 ----")
     st.markdown("""
     - **작업부하**: 매우쉬움(1), 쉬움(2), 약간 힘듦(3), 힘듦(4), 매우 힘듦(5)
     - **작업빈도**: 3개월마다(1), 가끔(2), 자주(3), 계속(4), 초과근무(5)
     """)
 
+    # 이하 2단계에 해당하는 나머지 코드…
     checklist_df = st.session_state.get("checklist_df")
     if checklist_df is not None:
         filtered = checklist_df[["단위작업명"] + [col for col in checklist_df.columns if "호" in col]]
