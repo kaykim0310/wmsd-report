@@ -97,66 +97,64 @@ with tabs[2]:
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
 
 with tabs[3]:
-   import streamlit as st
-import pandas as pd
+    st.title("작업조건조사 (인간공학적 측면)")
 
-st.title("작업조건조사 (인간공학적 측면)")
+    st.markdown("#### 1단계 : 작업별 주요 작업내용")
+    작업명 = st.text_input("작업명")
+    작업내용 = st.text_area("작업내용(단위작업명)")
 
-st.markdown("#### 1단계 : 작업별 주요 작업내용")
-작업명 = st.text_input("작업명")
-작업내용 = st.text_area("작업내용(단위작업명)")
+    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
 
-st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
+    row_count = 7
+    부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
+    빈도옵션 = ["", "3개월마다(년 2-3회)(1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간이상)(4)", "초과근무(1일 8시간이상)(5)"]
 
-row_count = 7
-부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
-빈도옵션 = ["", "3개월마다(년 2-3회)((1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간이상)(4)", "초과근무(1일 8시간이상)(5)"]
+    # 데이터프레임 생성
+    data = pd.DataFrame({
+        "단위작업명": ["" for _ in range(row_count)],
+        "부담작업(호)": ["" for _ in range(row_count)],
+        "작업부하(A)": ["" for _ in range(row_count)],
+        "작업빈도(B)": ["" for _ in range(row_count)],
+        "총점": ["" for _ in range(row_count)],
+    })
 
-# 데이터프레임 생성
-data = pd.DataFrame({
-    "단위작업명": ["" for _ in range(row_count)],
-    "부담작업(호)": ["" for _ in range(row_count)],
-    "작업부하(A)": ["" for _ in range(row_count)],
-    "작업빈도(B)": ["" for _ in range(row_count)],
-    "총점": ["" for _ in range(row_count)],
-})
+    # 컬럼 설정
+    column_config = {
+        "단위작업명": st.column_config.TextColumn("단위작업명", width="medium"),
+        "부담작업(호)": st.column_config.TextColumn("부담작업(호)", width="medium"),
+        "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, width="medium"),
+        "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, width="medium"),
+        "총점": st.column_config.TextColumn("총점", width="medium", disabled=True),
+    }
 
-# 컬럼 설정
-column_config = {
-    "단위작업명": st.column_config.TextColumn("단위작업명", width="medium"),
-    "부담작업(호)": st.column_config.TextColumn("부담작업(호)", width="medium"),
-    "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, width="medium"),
-    "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, width="medium"),
-    "총점": st.column_config.TextColumn("총점", width="medium", disabled=True),
-}
+    # 데이터 입력 및 총점 계산
+    edited_df = st.data_editor(
+        data,
+        column_config=column_config,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        key="작업조건조사표"
+    )
 
-edited_df = st.data_editor(
-    data,
-    column_config=column_config,
-    num_rows="dynamic",
-    use_container_width=True,
-    hide_index=True,
-    key="작업조건조사표"
-)
+    # 총점 자동계산
+    for i in range(len(edited_df)):
+        a = edited_df.loc[i, "작업부하(A)"]
+        b = edited_df.loc[i, "작업빈도(B)"]
+        try:
+            a_val = int(a.split("(")[-1].replace(")", "")) if "(" in str(a) else 0
+            b_val = int(b.split("(")[-1].replace(")", "")) if "(" in str(b) else 0
+            edited_df.loc[i, "총점"] = str(a_val * b_val) if a_val and b_val else ""
+        except Exception:
+            edited_df.loc[i, "총점"] = ""
 
-# 총점 자동계산
-for i in range(len(edited_df)):
-    a = edited_df.loc[i, "작업부하(A)"]
-    b = edited_df.loc[i, "작업빈도(B)"]
-    try:
-        a_val = int(a.split("(")[-1].replace(")", "")) if "(" in str(a) else 0
-        b_val = int(b.split("(")[-1].replace(")", "")) if "(" in str(b) else 0
-        edited_df.loc[i, "총점"] = str(a_val * b_val) if a_val and b_val else ""
-    except Exception:
-        edited_df.loc[i, "총점"] = ""
-
-# 표 다시 출력 (총점 반영)
-st.data_editor(
-    edited_df,
-    column_config=column_config,
-    num_rows="dynamic",
-    use_container_width=True,
-    hide_index=True,
-    key="작업조건조사표_최종",
-    disabled=["총점"]
-)
+    # 표 다시 출력 없이, 총점 반영된 데이터만 사용
+    st.data_editor(
+        edited_df,
+        column_config=column_config,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        key="작업조건조사표_최종",
+        disabled=["총점"]
+    )
