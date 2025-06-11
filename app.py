@@ -98,9 +98,6 @@ with tabs[2]:
 
 with tabs[3]:
     st.title("작업조건조사 (인간공학적 측면)")
-
     st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    st.markdown("작업명")
     작업명 = st.text_input("작업명", key="tab3_작업명")
-    st.markdown("작업내용(단위작업명)")
     작업내용 = st.text_area("작업내용(단위작업명)", key="tab3_작업내용")
