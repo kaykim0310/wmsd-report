@@ -105,13 +105,11 @@ with tabs[3]:
     
     # 1단계: 유해요인 기본조사
     st.subheader("1단계: 유해요인 기본조사")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         작업공정 = st.text_input("작업공정", key="1단계_작업공정")
     with col2:
         작업내용 = st.text_input("작업내용", key="1단계_작업내용")
-    with col3:
-        문제점 = st.text_input("문제점", key="1단계_문제점")
     
     st.markdown("---")
     
@@ -180,7 +178,7 @@ with tabs[3]:
         "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, required=False),
         "단위작업명": st.column_config.TextColumn("단위작업명"),
         "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
-        "총점": st.column_config.NumberColumn("총점", disabled=True, format="%d"),
+        "총점": st.column_config.TextColumn("총점(자동계산)", disabled=True),
     }
 
     # 작업부하와 작업빈도에서 숫자 추출하는 함수
