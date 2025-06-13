@@ -4,6 +4,10 @@ from io import BytesIO
 
 st.set_page_config(layout="wide")
 
+# 세션 상태 초기화
+if "checklist_df" not in st.session_state:
+    st.session_state["checklist_df"] = pd.DataFrame()
+
 tabs = st.tabs([
     "사업장개요",
     "근골격계 부담작업 체크리스트",
@@ -66,10 +70,8 @@ with tabs[2]:
     with col2:
         조사자 = st.text_input("조사자")
         작업공정명 = st.text_input("작업공정명")
-    
-    # 작업명 입력은 이미 체크리스트에서 입력받기 때문에 중복 제거(혹은 별도 관리 가능)
-    # 작업명 = st.text_input("작업명", key="tab2_작업명")
-    
+    작업명 = st.text_input("작업명", key="tab2_작업명")
+
     st.markdown("#### 나. 작업장 상황조사")
 
     def 상황조사행(항목명):
@@ -99,80 +101,127 @@ with tabs[2]:
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
 
 with tabs[3]:
-    st.title("작업조건조사 (인간공학적 측면)")
+    st.subheader("2단계: 작업별 작업부하 및 작업빈도")
     
-    # 1단계: 작업별 주요 작업내용
-    st.markdown("#### 1단계 : 작업별 주요 작업내용")
-    st.write("---- Debug: 1단계 실행됨 ----")
-    if st.session_state.get("checklist_df") is not None:
-        df = st.session_state["checklist_df"]
-        if not df.empty:
-            st.write("**작업명:**", df["작업명"].iloc[0])
-            st.write("**작업내용(단위작업명):**", df["단위작업명"].iloc[0])
-    
-    # 2단계: 작업별 작업부하 및 작업빈도
-    st.markdown("#### 2단계 : 작업별 작업부하 및 작업빈도")
-    st.write("---- Debug: 2단계 실행됨 ----")
-    st.markdown("""
-    - **작업부하**: 매우쉬움(1), 쉬움(2), 약간 힘듦(3), 힘듦(4), 매우 힘듦(5)
-    - **작업빈도**: 3개월마다(1), 가끔(2), 자주(3), 계속(4), 초과근무(5)
-    """)
-
-    # 이하 2단계에 해당하는 나머지 코드…
-    checklist_df = st.session_state.get("checklist_df")
-    if checklist_df is not None:
-        filtered = checklist_df[["단위작업명"] + [col for col in checklist_df.columns if "호" in col]]
-        단위작업명_list = filtered["단위작업명"].tolist()
-        부담작업호_list = []
-        for idx, row in filtered.iterrows():
-            해당호 = [col for col in filtered.columns if "호" in col and row[col] == "O(해당)"]
-            부담작업호_list.append(", ".join(해당호) if 해당호 else "")
+    # 체크리스트에서 데이터 가져오기
+    if not st.session_state["checklist_df"].empty:
+        checklist_data = []
+        for idx, row in st.session_state["checklist_df"].iterrows():
+            if row["작업명"] and row["단위작업명"]:  # 작업명과 단위작업명이 있는 경우만
+                부담작업호 = []
+                for i in range(1, 12):
+                    if row[f"{i}호"] == "O(해당)":
+                        부담작업호.append(f"{i}호")
+                    elif row[f"{i}호"] == "△(잠재위험)":
+                        부담작업호.append(f"{i}호(잠재)")
+                
+                if 부담작업호:  # 해당하는 호가 있는 경우만 추가
+                    checklist_data.append({
+                        "단위작업명": row["단위작업명"],
+                        "부담작업(호)": ", ".join(부담작업호),
+                        "작업부하(A)": "",
+                        "작업빈도(B)": "",
+                        "총점": 0
+                    })
+        
+        if checklist_data:
+            data = pd.DataFrame(checklist_data)
+        else:
+            data = pd.DataFrame({
+                "단위작업명": ["" for _ in range(5)],
+                "부담작업(호)": ["" for _ in range(5)],
+                "작업부하(A)": ["" for _ in range(5)],
+                "작업빈도(B)": ["" for _ in range(5)],
+                "총점": [0 for _ in range(5)],
+            })
     else:
-        단위작업명_list = ["" for _ in range(7)]
-        부담작업호_list = ["" for _ in range(7)]
+        data = pd.DataFrame({
+            "단위작업명": ["" for _ in range(5)],
+            "부담작업(호)": ["" for _ in range(5)],
+            "작업부하(A)": ["" for _ in range(5)],
+            "작업빈도(B)": ["" for _ in range(5)],
+            "총점": [0 for _ in range(5)],
+        })
 
-    row_count = max(len(단위작업명_list), 7)
-    부하옵션 = ["", "매우쉬움(1)", "쉬움(2)", "약간 힘듦(3)", "힘듦(4)", "매우 힘듦(5)"]
-    빈도옵션 = ["", "3개월마다(년 2-3회)(1)", "가끔(하루 또는 주2-3일에 1회)(2)", "자주(1일 4시간)(3)", "계속(1일 4시간이상)(4)", "초과근무(1일 8시간이상)(5)"]
-
-    data = pd.DataFrame({
-        "단위작업명": 단위작업명_list + [""] * (row_count - len(단위작업명_list)),
-        "부담작업(호)": 부담작업호_list + [""] * (row_count - len(부담작업호_list)),
-        "작업부하(A)": ["" for _ in range(row_count)],
-        "작업빈도(B)": ["" for _ in range(row_count)],
-        "총점": ["" for _ in range(row_count)],
-    })
+    부하옵션 = [
+        "",
+        "매우쉬움(1)", 
+        "쉬움(2)", 
+        "약간 힘듦(3)", 
+        "힘듦(4)", 
+        "매우 힘듦(5)"
+    ]
+    빈도옵션 = [
+        "",
+        "3개월마다(1)", 
+        "가끔(2)", 
+        "자주(3)", 
+        "계속(4)", 
+        "초과근무(5)"
+    ]
 
     column_config = {
-        "단위작업명": st.column_config.TextColumn("단위작업명", width="medium", disabled=True),
-        "부담작업(호)": st.column_config.TextColumn("부담작업(호)", width="medium", disabled=True),
-        "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, width="medium"),
-        "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, width="medium"),
-        "총점": st.column_config.TextColumn("총점", width="medium", disabled=True),
+        "작업부하(A)": st.column_config.SelectboxColumn("작업부하(A)", options=부하옵션, required=False),
+        "작업빈도(B)": st.column_config.SelectboxColumn("작업빈도(B)", options=빈도옵션, required=False),
+        "단위작업명": st.column_config.TextColumn("단위작업명"),
+        "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
+        "총점": st.column_config.NumberColumn("총점", disabled=True, format="%d"),
     }
 
+    # 작업부하와 작업빈도에서 숫자 추출하는 함수
+    def extract_number(value):
+        if value and "(" in value and ")" in value:
+            return int(value.split("(")[1].split(")")[0])
+        return 0
+
+    # 데이터 편집
     edited_df = st.data_editor(
         data,
-        column_config=column_config,
         num_rows="dynamic",
         use_container_width=True,
         hide_index=True,
-        key="작업조건조사표"
+        column_config=column_config,
+        key="작업조건_data_editor"
     )
-
-    total_sum = 0
-    for i in range(len(edited_df)):
-        a = edited_df.loc[i, "작업부하(A)"]
-        b = edited_df.loc[i, "작업빈도(B)"]
-        try:
-            a_val = int(a.split("(")[-1].replace(")", "")) if "(" in str(a) else 0
-            b_val = int(b.split("(")[-1].replace(")", "")) if "(" in str(b) else 0
-            score = a_val * b_val if a_val and b_val else ""
-            edited_df.loc[i, "총점"] = str(score) if score else ""
-            if score:
-                total_sum += score
-        except Exception:
-            edited_df.loc[i, "총점"] = ""
-
-    st.markdown("**총합**")
-    st.text_input("총합", value=str(total_sum), disabled=True, key="총합_자동계산")
+    
+    # 총점 자동 계산
+    if not edited_df.empty:
+        for idx in range(len(edited_df)):
+            부하값 = extract_number(edited_df.at[idx, "작업부하(A)"])
+            빈도값 = extract_number(edited_df.at[idx, "작업빈도(B)"])
+            edited_df.at[idx, "총점"] = 부하값 * 빈도값
+        
+        # 계산된 결과 다시 표시
+        st.dataframe(
+            edited_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config=column_config
+        )
+    
+    # 엑셀 다운로드 버튼 추가
+    if st.button("엑셀 파일로 다운로드"):
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # 사업장 개요 정보
+            overview_data = {
+                "항목": ["사업장명", "소재지", "업종", "예비조사일", "본조사일", "수행기관", "성명"],
+                "내용": [사업장명, 소재지, 업종, str(예비조사), str(본조사), 수행기관, 성명]
+            }
+            overview_df = pd.DataFrame(overview_data)
+            overview_df.to_excel(writer, sheet_name='사업장개요', index=False)
+            
+            # 체크리스트
+            if not st.session_state["checklist_df"].empty:
+                st.session_state["checklist_df"].to_excel(writer, sheet_name='체크리스트', index=False)
+            
+            # 작업조건조사
+            edited_df.to_excel(writer, sheet_name='작업조건조사', index=False)
+            
+        output.seek(0)
+        st.download_button(
+            label="📥 엑셀 다운로드",
+            data=output,
+            file_name="근골격계_유해요인조사.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
