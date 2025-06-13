@@ -187,6 +187,12 @@ with tabs[3]:
             return int(value.split("(")[1].split(")")[0])
         return 0
 
+    # 총점 계산 함수
+    def calculate_total_score(row):
+        부하값 = extract_number(row["작업부하(A)"])
+        빈도값 = extract_number(row["작업빈도(B)"])
+        return 부하값 * 빈도값
+
     # 데이터 편집
     edited_df = st.data_editor(
         data,
@@ -197,12 +203,29 @@ with tabs[3]:
         key="작업조건_data_editor"
     )
     
-    # 총점 자동 계산
+    # 총점 자동 계산 후 다시 표시
     if not edited_df.empty:
-        for idx in range(len(edited_df)):
-            부하값 = extract_number(edited_df.at[idx, "작업부하(A)"])
-            빈도값 = extract_number(edited_df.at[idx, "작업빈도(B)"])
-            edited_df.at[idx, "총점"] = 부하값 * 빈도값
+        # 총점 계산
+        display_df = edited_df.copy()
+        for idx in range(len(display_df)):
+            display_df.at[idx, "총점"] = calculate_total_score(display_df.iloc[idx])
+        
+        # 계산된 데이터를 다시 표시
+        st.markdown("##### 계산 결과")
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "단위작업명": st.column_config.TextColumn("단위작업명"),
+                "부담작업(호)": st.column_config.TextColumn("부담작업(호)"),
+                "작업부하(A)": st.column_config.TextColumn("작업부하(A)"),
+                "작업빈도(B)": st.column_config.TextColumn("작업빈도(B)"),
+                "총점": st.column_config.NumberColumn("총점(자동계산)", format="%d"),
+            }
+        )
+        
+        st.info("💡 총점은 작업부하(A) × 작업빈도(B)로 자동 계산됩니다.")
     
     # 엑셀 다운로드 버튼 추가
     st.markdown("---")
@@ -221,8 +244,12 @@ with tabs[3]:
             if not st.session_state["checklist_df"].empty:
                 st.session_state["checklist_df"].to_excel(writer, sheet_name='체크리스트', index=False)
             
-            # 작업조건조사
-            edited_df.to_excel(writer, sheet_name='작업조건조사', index=False)
+            # 작업조건조사 (계산된 총점 포함)
+            if not edited_df.empty:
+                export_df = edited_df.copy()
+                for idx in range(len(export_df)):
+                    export_df.at[idx, "총점"] = calculate_total_score(export_df.iloc[idx])
+                export_df.to_excel(writer, sheet_name='작업조건조사', index=False)
             
         output.seek(0)
         st.download_button(
@@ -231,3 +258,4 @@ with tabs[3]:
             file_name="근골격계_유해요인조사.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+    
