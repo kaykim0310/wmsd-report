@@ -101,6 +101,21 @@ with tabs[2]:
         st.markdown("<hr style='margin:0.5em 0;'>", unsafe_allow_html=True)
 
 with tabs[3]:
+    st.title("작업조건조사")
+    
+    # 1단계: 유해요인 기본조사
+    st.subheader("1단계: 유해요인 기본조사")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        작업공정 = st.text_input("작업공정", key="1단계_작업공정")
+    with col2:
+        작업내용 = st.text_input("작업내용", key="1단계_작업내용")
+    with col3:
+        문제점 = st.text_input("문제점", key="1단계_문제점")
+    
+    st.markdown("---")
+    
+    # 2단계: 작업별 작업부하 및 작업빈도
     st.subheader("2단계: 작업별 작업부하 및 작업빈도")
     
     # 체크리스트에서 데이터 가져오기
@@ -190,16 +205,9 @@ with tabs[3]:
             부하값 = extract_number(edited_df.at[idx, "작업부하(A)"])
             빈도값 = extract_number(edited_df.at[idx, "작업빈도(B)"])
             edited_df.at[idx, "총점"] = 부하값 * 빈도값
-        
-        # 계산된 결과 다시 표시
-        st.dataframe(
-            edited_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config=column_config
-        )
     
     # 엑셀 다운로드 버튼 추가
+    st.markdown("---")
     if st.button("엑셀 파일로 다운로드"):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
