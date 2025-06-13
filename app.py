@@ -227,6 +227,55 @@ with tabs[3]:
         
         st.info("💡 총점은 작업부하(A) × 작업빈도(B)로 자동 계산됩니다.")
     
+    # 3단계: 유해요인평가
+    st.markdown("---")
+    st.subheader("3단계: 유해요인평가")
+    
+    # 작업명과 근로자수 입력
+    col1, col2 = st.columns(2)
+    with col1:
+        평가_작업명 = st.text_input("작업명", key="3단계_작업명")
+    with col2:
+        평가_근로자수 = st.text_input("근로자수", key="3단계_근로자수")
+    
+    # 유해요인평가 테이블
+    평가_columns = ["구분", "평가내용", "개선방안"]
+    평가_data = pd.DataFrame({
+        "구분": ["반복성", "부자연스러운 자세", "과도한 힘", "접촉스트레스", "진동", "기타"],
+        "평가내용": [""] * 6,
+        "개선방안": [""] * 6
+    })
+    
+    평가_column_config = {
+        "구분": st.column_config.TextColumn("구분", disabled=True, width=150),
+        "평가내용": st.column_config.TextColumn("평가내용", width=350),
+        "개선방안": st.column_config.TextColumn("개선방안", width=350)
+    }
+    
+    평가_edited_df = st.data_editor(
+        평가_data,
+        use_container_width=True,
+        hide_index=True,
+        column_config=평가_column_config,
+        key="유해요인평가_data_editor",
+        disabled=["구분"]
+    )
+    
+    # 사진 업로드 섹션
+    st.markdown("#### 사진")
+    uploaded_files = st.file_uploader(
+        "작업 사진을 업로드하세요",
+        type=['png', 'jpg', 'jpeg'],
+        accept_multiple_files=True,
+        key="작업사진_업로드"
+    )
+    
+    if uploaded_files:
+        cols = st.columns(3)
+        for idx, uploaded_file in enumerate(uploaded_files):
+            with cols[idx % 3]:
+                st.image(uploaded_file, caption=uploaded_file.name, use_column_width=True)
+    
     # 엑셀 다운로드 버튼 추가
     st.markdown("---")
     if st.button("엑셀 파일로 다운로드"):
@@ -251,6 +300,15 @@ with tabs[3]:
                     export_df.at[idx, "총점"] = calculate_total_score(export_df.iloc[idx])
                 export_df.to_excel(writer, sheet_name='작업조건조사', index=False)
             
+            # 유해요인평가
+            if '평가_edited_df' in locals() and not 평가_edited_df.empty:
+                평가_export_df = pd.DataFrame({
+                    "작업명": [평가_작업명],
+                    "근로자수": [평가_근로자수]
+                })
+                평가_export_df.to_excel(writer, sheet_name='유해요인평가_개요', index=False)
+                평가_edited_df.to_excel(writer, sheet_name='유해요인평가_상세', index=False)
+            
         output.seek(0)
         st.download_button(
             label="📥 엑셀 다운로드",
@@ -258,4 +316,3 @@ with tabs[3]:
             file_name="근골격계_유해요인조사.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    
