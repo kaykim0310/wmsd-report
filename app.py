@@ -441,27 +441,30 @@ with tabs[3]:
                             원인분석_df.to_excel(writer, sheet_name=sheet_name, index=False)
                 
                 # 정밀조사 데이터 저장 (있는 경우만)
-                if "정밀조사_목록" in st.session_state and st.session_state["정밀조사_목록"]:
-                    for 조사명 in st.session_state["정밀조사_목록"]:
-                        정밀_data = {
-                            "작업공정명": [st.session_state.get(f"정밀_작업공정명_{조사명}", "")],
-                            "작업명": [st.session_state.get(f"정밀_작업명_{조사명}", "")]
-                        }
-                        
-                        원인분석_key = f"정밀_원인분석_data_{조사명}"
-                        if 원인분석_key in st.session_state:
-                            원인분석_df = st.session_state[원인분석_key]
-                            if isinstance(원인분석_df, pd.DataFrame) and not 원인분석_df.empty:
-                                # 정밀조사 정보와 원인분석을 하나의 시트에
-                                combined_df = pd.concat([
-                                    pd.DataFrame(정밀_data),
-                                    pd.DataFrame([{}]),  # 빈 행
-                                    pd.DataFrame([{"작업분석 및 평가도구": "작업별로 관련된 유해요인에 대한 원인분석"}]),
-                                    원인분석_df
-                                ], ignore_index=True)
-                                
-                                sheet_name = f'정밀_{조사명}'.replace('/', '_').replace('\\', '_')[:31]
-                                combined_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                if st.session_state.get("정밀_작업공정명", "") or st.session_state.get("정밀_작업명", ""):
+                    정밀_data_rows = []
+                    
+                    # 기본 정보
+                    정밀_data_rows.append(["작업공정명", st.session_state.get("정밀_작업공정명", "")])
+                    정밀_data_rows.append(["작업명", st.session_state.get("정밀_작업명", "")])
+                    정밀_data_rows.append([])  # 빈 행
+                    정밀_data_rows.append(["작업별로 관련된 유해요인에 대한 원인분석"])
+                    정밀_data_rows.append(["작업분석 및 평가도구", "분석결과", "만점"])
+                    
+                    # 원인분석 데이터
+                    if "정밀_원인분석_data" in st.session_state:
+                        원인분석_df = st.session_state["정밀_원인분석_data"]
+                        for _, row in 원인분석_df.iterrows():
+                            if row.get("작업분석 및 평가도구", "") or row.get("분석결과", "") or row.get("만점", ""):
+                                정밀_data_rows.append([
+                                    row.get("작업분석 및 평가도구", ""),
+                                    row.get("분석결과", ""),
+                                    row.get("만점", "")
+                                ])
+                    
+                    if len(정밀_data_rows) > 5:  # 헤더 이후에 데이터가 있는 경우만
+                        정밀_sheet_df = pd.DataFrame(정밀_data_rows)
+                        정밀_sheet_df.to_excel(writer, sheet_name="정밀조사", index=False, header=False)
                 
             output.seek(0)
             st.download_button(
