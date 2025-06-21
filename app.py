@@ -129,19 +129,70 @@ with tabs[1]:
         "11호": "하루에 총 2시간 이상 시간당 10회 이상 손 또는 무릎을 사용하여 반복적으로 충격을 가하는 작업"
     }
     
-    # 각 호별 기준을 expander로 표시
-    with st.expander("📋 근골격계 부담작업 11개 호별 기준 보기"):
-        for 호, 기준 in 부담작업_기준.items():
-            st.info(f"**{호}**: {기준}")
+    # 기준 표시 방법을 탭으로 구성
+    st.markdown("### 📋 근골격계 부담작업 기준")
     
+    # 모든 기준을 한 번에 보여주는 테이블
+    기준_data = []
+    for 호, 기준 in 부담작업_기준.items():
+        기준_data.append({
+            "구분": 호,
+            "기준 내용": 기준
+        })
+    
+    기준_df = pd.DataFrame(기준_data)
+    
+    # 스타일링된 데이터프레임으로 표시
+    st.dataframe(
+        기준_df,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+        column_config={
+            "구분": st.column_config.TextColumn("구분", width=80),
+            "기준 내용": st.column_config.TextColumn("기준 내용", width=800)
+        }
+    )
+    
+    st.markdown("---")
+    st.markdown("### ✅ 체크리스트 작성")
+    
+    # 체크리스트 테이블
     columns = [
         "작업명", "단위작업명"
     ] + [f"{i}호" for i in range(1, 12)]
+    
     data = pd.DataFrame(
         columns=columns,
         data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
     )
+
+    ho_options = [
+        "O(해당)",
+        "△(잠재위험)",
+        "X(미해당)"
+    ]
     
+    column_config = {
+        f"{i}호": st.column_config.SelectboxColumn(
+            f"{i}호", options=ho_options, required=True
+        ) for i in range(1, 12)
+    }
+    column_config["작업명"] = st.column_config.TextColumn("작업명")
+    column_config["단위작업명"] = st.column_config.TextColumn("단위작업명")
+
+    edited_df = st.data_editor(
+        data,
+        num_rows="dynamic",
+        use_container_width=True,
+        hide_index=True,
+        column_config=column_config
+    )
+    
+    st.session_state["checklist_df"] = edited_df
+    
+    # 사용 팁
+    st.info("💡 위의 표에서 각 호별 기준을 확인하고, 아래 체크리스트에서 해당 여부를 선택하세요.")
 # 3. 유해요인조사표 탭
 with tabs[2]:
     st.title("유해요인조사표")
