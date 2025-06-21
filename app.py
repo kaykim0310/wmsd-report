@@ -141,7 +141,7 @@ with tabs[1]:
         columns=columns,
         data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
     )
-
+    
 # 3. 유해요인조사표 탭
 with tabs[2]:
     st.title("유해요인조사표")
