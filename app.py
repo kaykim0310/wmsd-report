@@ -113,6 +113,27 @@ with tabs[0]:
 # 2. 근골격계 부담작업 체크리스트 탭
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
+    
+    # 근골격계 부담작업 11개 호별 기준 정의
+    부담작업_기준 = {
+        "1호": "하루에 4시간 이상 집중적으로 자료입력 등을 위해 키보드 또는 마우스를 조작하는 작업",
+        "2호": "하루에 총 2시간 이상 목, 어깨, 팔꿈치, 손목 또는 손을 사용하여 같은 동작을 반복하는 작업",
+        "3호": "하루에 총 2시간 이상 머리 위에 손이 있거나, 팔꿈치가 어깨 위에 있거나, 팔꿈치를 몸통으로부터 들거나, 팔꿈치를 몸통 뒤쪽에 위치하도록 하는 상태에서 이루어지는 작업",
+        "4호": "지지되지 않은 상태이거나 임의로 자세를 바꿀 수 없는 조건에서, 하루에 2시간 이상 목이나 허리를 구부리거나 트는 상태에서 이루어지는 작업",
+        "5호": "하루에 총 2시간 이상 쪼그리고 앉거나 무릎을 굽힌 자세에서 이루어지는 작업",
+        "6호": "하루에 총 2시간 이상 지지되지 않은 상태에서 1kg 이상의 물건을 한 손의 손가락으로 집어 옮기거나, 2kg 이상에 상응하는 힘을 가하여 한 손의 손가락으로 물건을 쥐는 작업",
+        "7호": "하루에 총 2시간 이상 지지되지 않은 상태에서 4.5kg 이상의 물건을 한 손으로 들거나 동일한 힘으로 쥐는 작업",
+        "8호": "하루에 10회 이상 25kg 이상의 물체를 드는 작업",
+        "9호": "하루에 25회 이상 10kg 이상의 물체를 무릎 아래에서 들거나, 어깨 위에서 들거나, 팔을 뻗은 상태에서 드는 작업",
+        "10호": "하루에 총 2시간 이상, 분당 2회 이상 4.5kg 이상의 물체를 드는 작업",
+        "11호": "하루에 총 2시간 이상 시간당 10회 이상 손 또는 무릎을 사용하여 반복적으로 충격을 가하는 작업"
+    }
+    
+    # 각 호별 기준을 expander로 표시
+    with st.expander("📋 근골격계 부담작업 11개 호별 기준 보기"):
+        for 호, 기준 in 부담작업_기준.items():
+            st.info(f"**{호}**: {기준}")
+    
     columns = [
         "작업명", "단위작업명"
     ] + [f"{i}호" for i in range(1, 12)]
@@ -120,28 +141,6 @@ with tabs[1]:
         columns=columns,
         data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
     )
-
-    ho_options = [
-        "O(해당)",
-        "△(잠재위험)",
-        "X(미해당)"
-    ]
-    column_config = {
-        f"{i}호": st.column_config.SelectboxColumn(
-            f"{i}호", options=ho_options, required=True
-        ) for i in range(1, 12)
-    }
-    column_config["작업명"] = st.column_config.TextColumn("작업명")
-    column_config["단위작업명"] = st.column_config.TextColumn("단위작업명")
-
-    edited_df = st.data_editor(
-        data,
-        num_rows="dynamic",
-        use_container_width=True,
-        hide_index=True,
-        column_config=column_config
-    )
-    st.session_state["checklist_df"] = edited_df
 
 # 3. 유해요인조사표 탭
 with tabs[2]:
