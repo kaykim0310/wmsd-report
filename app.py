@@ -113,54 +113,122 @@ with tabs[0]:
 # 2. 근골격계 부담작업 체크리스트 탭
 with tabs[1]:
     st.subheader("근골격계 부담작업 체크리스트")
-
-    # 근골격계 부담작업 11개 호별 기준 정의
-    부담작업_기준 = {
-        "1호": "하루에 4시간 이상 집중적으로 자료입력 등을 위해 키보드 또는 마우스를 조작하는 작업",
-        "2호": "하루에 총 2시간 이상 목, 어깨, 팔꿈치, 손목 또는 손을 사용하여 같은 동작을 반복하는 작업",
-        "3호": "하루에 총 2시간 이상 머리 위에 손이 있거나, 팔꿈치가 어깨 위에 있거나, 팔꿈치를 몸통으로부터 들거나, 팔꿈치를 몸통 뒤쪽에 위치하도록 하는 상태에서 이루어지는 작업",
-        "4호": "지지되지 않은 상태이거나 임의로 자세를 바꿀 수 없는 조건에서, 하루에 2시간 이상 목이나 허리를 구부리거나 트는 상태에서 이루어지는 작업",
-        "5호": "하루에 총 2시간 이상 쪼그리고 앉거나 무릎을 굽힌 자세에서 이루어지는 작업",
-        "6호": "하루에 총 2시간 이상 지지되지 않은 상태에서 1kg 이상의 물건을 한 손의 손가락으로 집어 옮기거나, 2kg 이상에 상응하는 힘을 가하여 한 손의 손가락으로 물건을 쥐는 작업",
-        "7호": "하루에 총 2시간 이상 지지되지 않은 상태에서 4.5kg 이상의 물건을 한 손으로 들거나 동일한 힘으로 쥐는 작업",
-        "8호": "하루에 10회 이상 25kg 이상의 물체를 드는 작업",
-        "9호": "하루에 25회 이상 10kg 이상의 물체를 무릎 아래에서 들거나, 어깨 위에서 들거나, 팔을 뻗은 상태에서 드는 작업",
-        "10호": "하루에 총 2시간 이상, 분당 2회 이상 4.5kg 이상의 물체를 드는 작업",
-        "11호": "하루에 총 2시간 이상 시간당 10회 이상 손 또는 무릎을 사용하여 반복적으로 충격을 가하는 작업"
-    }
+    
+    # 엑셀 파일 업로드 기능 추가
+    with st.expander("📤 엑셀 파일 업로드"):
+        st.info("""
+        📌 엑셀 파일 양식:
+        - 첫 번째 열: 작업명
+        - 두 번째 열: 단위작업명
+        - 3~13번째 열: 1호~11호 (O(해당), △(잠재위험), X(미해당) 중 입력)
+        """)
+        
+        uploaded_excel = st.file_uploader("엑셀 파일 선택", type=['xlsx', 'xls'])
+        
+        if uploaded_excel is not None:
+            try:
+                # 엑셀 파일 읽기
+                df_excel = pd.read_excel(uploaded_excel)
+                
+                # 컬럼명 확인 및 조정
+                expected_columns = ["작업명", "단위작업명"] + [f"{i}호" for i in range(1, 12)]
+                
+                # 컬럼 개수가 맞는지 확인
+                if len(df_excel.columns) >= 13:
+                    # 컬럼명 재설정
+                    df_excel.columns = expected_columns[:len(df_excel.columns)]
+                    
+                    # 값 검증 (O(해당), △(잠재위험), X(미해당)만 허용)
+                    valid_values = ["O(해당)", "△(잠재위험)", "X(미해당)"]
+                    
+                    # 3번째 열부터 13번째 열까지 검증
+                    for col in expected_columns[2:]:
+                        if col in df_excel.columns:
+                            # 유효하지 않은 값은 X(미해당)으로 변경
+                            df_excel[col] = df_excel[col].apply(
+                                lambda x: x if x in valid_values else "X(미해당)"
+                            )
+                    
+                    if st.button("✅ 데이터 적용하기"):
+                        st.session_state["checklist_df"] = df_excel
+                        st.success("✅ 엑셀 데이터를 성공적으로 불러왔습니다!")
+                        st.rerun()
+                    
+                    # 미리보기
+                    st.markdown("#### 📋 데이터 미리보기")
+                    st.dataframe(df_excel)
+                    
+                else:
+                    st.error("⚠️ 엑셀 파일의 컬럼이 13개 이상이어야 합니다. (작업명, 단위작업명, 1호~11호)")
+                    
+            except Exception as e:
+                st.error(f"❌ 파일 읽기 오류: {str(e)}")
+    
+    # 샘플 엑셀 파일 다운로드
+    with st.expander("📥 샘플 엑셀 파일 다운로드"):
+        # 샘플 데이터 생성
+        sample_data = pd.DataFrame({
+            "작업명": ["조립작업", "조립작업", "포장작업", "포장작업", "운반작업"],
+            "단위작업명": ["부품조립", "나사체결", "제품포장", "박스적재", "대차운반"],
+            "1호": ["O(해당)", "X(미해당)", "X(미해당)", "O(해당)", "X(미해당)"],
+            "2호": ["X(미해당)", "O(해당)", "X(미해당)", "X(미해당)", "O(해당)"],
+            "3호": ["△(잠재위험)", "X(미해당)", "O(해당)", "X(미해당)", "X(미해당)"],
+            "4호": ["X(미해당)", "X(미해당)", "X(미해당)", "△(잠재위험)", "X(미해당)"],
+            "5호": ["X(미해당)", "△(잠재위험)", "X(미해당)", "X(미해당)", "O(해당)"],
+            "6호": ["X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)"],
+            "7호": ["X(미해당)", "X(미해당)", "△(잠재위험)", "X(미해당)", "X(미해당)"],
+            "8호": ["X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)"],
+            "9호": ["X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)"],
+            "10호": ["X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)", "X(미해당)"],
+            "11호": ["O(해당)", "X(미해당)", "X(미해당)", "O(해당)", "△(잠재위험)"]
+        })
+        
+        # 엑셀 파일로 변환
+        sample_output = BytesIO()
+        with pd.ExcelWriter(sample_output, engine='openpyxl') as writer:
+            sample_data.to_excel(writer, sheet_name='체크리스트', index=False)
+        
+        sample_output.seek(0)
+        
+        st.download_button(
+            label="📥 샘플 엑셀 다운로드",
+            data=sample_output,
+            file_name="체크리스트_샘플.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+        st.markdown("##### 샘플 데이터 구조:")
+        st.dataframe(sample_data)
     
     st.markdown("---")
-    st.markdown("### ✅ 체크리스트 작성")
     
-    # 체크리스트 테이블 컬럼 정의
-    columns = ["작업명", "단위작업명"] + [f"{i}호" for i in range(1, 12)]
+    # 기존 데이터 편집기
+    columns = [
+        "작업명", "단위작업명"
+    ] + [f"{i}호" for i in range(1, 12)]
     
-    # 초기 데이터프레임 생성
-    data = pd.DataFrame(
-        columns=columns,
-        data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
-    )
-
-    # 선택 옵션 정의
-    ho_options = ["O(해당)", "△(잠재위험)", "X(미해당)"]
-    
-    # data_editor 컬럼 설정 (툴팁 추가)
-    column_config = {
-        "작업명": st.column_config.TextColumn("작업명"),
-        "단위작업명": st.column_config.TextColumn("단위작업명")
-    }
-    
-    # 각 호별 Selectbox 컬럼에 'help' 파라미터를 사용하여 기준을 툴팁으로 추가
-    for i in range(1, 12):
-        호_key = f"{i}호"
-        column_config[호_key] = st.column_config.SelectboxColumn(
-            label=호_key,
-            options=ho_options,
-            required=True,
-            help=부담작업_기준[호_key]  # 여기에 툴팁으로 표시될 기준을 할당합니다.
+    # 세션 상태에 저장된 데이터가 있으면 사용, 없으면 빈 데이터
+    if not st.session_state["checklist_df"].empty:
+        data = st.session_state["checklist_df"]
+    else:
+        data = pd.DataFrame(
+            columns=columns,
+            data=[["", ""] + ["X(미해당)"]*11 for _ in range(5)]
         )
 
-    # 데이터 편집기 생성
+    ho_options = [
+        "O(해당)",
+        "△(잠재위험)",
+        "X(미해당)"
+    ]
+    column_config = {
+        f"{i}호": st.column_config.SelectboxColumn(
+            f"{i}호", options=ho_options, required=True
+        ) for i in range(1, 12)
+    }
+    column_config["작업명"] = st.column_config.TextColumn("작업명")
+    column_config["단위작업명"] = st.column_config.TextColumn("단위작업명")
+
     edited_df = st.data_editor(
         data,
         num_rows="dynamic",
@@ -168,12 +236,7 @@ with tabs[1]:
         hide_index=True,
         column_config=column_config
     )
-    
     st.session_state["checklist_df"] = edited_df
-    
-    # 사용 팁 (툴팁 기능 안내)
-    st.info("💡 위 체크리스트의 각 호(예: 1호, 2호)에 마우스를 올리면 상세한 부담작업 기준을 확인할 수 있습니다.")
-
 
 # 3. 유해요인조사표 탭
 with tabs[2]:
@@ -325,11 +388,11 @@ with tabs[3]:
             ]
             빈도옵션 = [
                 "",
-                "3개월마다(년2-3회)(1)", 
-                "가끔(하루/주2-3일 1회)(2)", 
-                "자주(1일4시간)(3)", 
-                "계속(1일4시간이상)(4)", 
-                "초과근무(1일8시간이상)(5)"
+                "3개월마다(1)", 
+                "가끔(2)", 
+                "자주(3)", 
+                "계속(4)", 
+                "초과근무(5)"
             ]
 
             column_config = {
@@ -719,11 +782,10 @@ with tabs[6]:
     ]
     
     # 초기 데이터 (빈 행 10개)
-    if "개선계획_data_저장" not in st.session_state:
-        st.session_state["개선계획_data_저장"] = pd.DataFrame(
-            columns=개선계획_columns,
-            data=[["", "", "", "", "", "", "", "", ""] for _ in range(10)]
-        )
+    개선계획_data = pd.DataFrame(
+        columns=개선계획_columns,
+        data=[["", "", "", "", "", "", "", "", ""] for _ in range(10)]
+    )
     
     # 컬럼 설정
     개선계획_config = {
@@ -740,7 +802,7 @@ with tabs[6]:
     
     # 데이터 편집기
     개선계획_edited = st.data_editor(
-        st.session_state["개선계획_data_저장"],
+        개선계획_data,
         hide_index=True,
         use_container_width=True,
         num_rows="dynamic",
@@ -772,7 +834,7 @@ with tabs[6]:
     col1, col2 = st.columns(2)
     
     with col1:
-        # 엑셀 다운로드 버튼 (기존 코드와 동일)
+        # 엑셀 다운로드 버튼
         if st.button("📊 엑셀 파일로 다운로드", use_container_width=True):
             try:
                 output = BytesIO()
@@ -847,16 +909,6 @@ with tabs[6]:
                             if isinstance(작업_df, pd.DataFrame) and not 작업_df.empty:
                                 export_df = 작업_df.copy()
                                 
-                                # 총점 계산 함수
-                                def extract_number(value):
-                                    if value and "(" in value and ")" in value:
-                                        return int(value.split("(")[1].split(")")[0])
-                                    return 0
-                                def calculate_total_score(row):
-                                    부하값 = extract_number(row["작업부하(A)"])
-                                    빈도값 = extract_number(row["작업빈도(B)"])
-                                    return 부하값 * 빈도값
-
                                 # 총점 계산
                                 for idx in range(len(export_df)):
                                     export_df.at[idx, "총점"] = calculate_total_score(export_df.iloc[idx])
@@ -969,190 +1021,293 @@ with tabs[6]:
         if PDF_AVAILABLE:
             if st.button("📄 PDF 보고서 생성", use_container_width=True):
                 try:
-                    # --- 폰트 설정 ---
-                    font_name = 'Helvetica' 
-                    nanum_gothic_path = None
-                    malgun_gothic_path = None
-
-                    font_paths_nanum = [
+                    # 한글 폰트 설정 - 나눔고딕 우선
+                    font_paths = [
                         "C:/Windows/Fonts/NanumGothic.ttf",
-                        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-                        "/System/Library/Fonts/Supplemental/NanumGothic.ttf"
+                        "C:/Windows/Fonts/NanumBarunGothic.ttf",
+                        "C:/Windows/Fonts/malgun.ttf",
+                        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  # Linux
+                        "/System/Library/Fonts/Supplemental/NanumGothic.ttf"  # Mac
                     ]
-                    font_paths_malgun = ["C:/Windows/Fonts/malgun.ttf"]
-
-                    for path in font_paths_nanum:
-                        if os.path.exists(path):
-                            nanum_gothic_path = path
+                    
+                    font_registered = False
+                    for font_path in font_paths:
+                        if os.path.exists(font_path):
+                            if "NanumGothic" in font_path:
+                                pdfmetrics.registerFont(TTFont('NanumGothic', font_path))
+                                font_name = 'NanumGothic'
+                            elif "NanumBarunGothic" in font_path:
+                                pdfmetrics.registerFont(TTFont('NanumBarunGothic', font_path))
+                                font_name = 'NanumBarunGothic'
+                            else:
+                                pdfmetrics.registerFont(TTFont('Malgun', font_path))
+                                font_name = 'Malgun'
+                            font_registered = True
                             break
                     
-                    for path in font_paths_malgun:
-                        if os.path.exists(path):
-                            malgun_gothic_path = path
-                            break
+                    if not font_registered:
+                        font_name = 'Helvetica'
                     
-                    if nanum_gothic_path:
-                        pdfmetrics.registerFont(TTFont('NanumGothic', nanum_gothic_path))
-                        font_name = 'NanumGothic'
-                        st.success("✅ 나눔고딕 폰트를 사용하여 PDF를 생성합니다.")
-                    elif malgun_gothic_path:
-                        pdfmetrics.registerFont(TTFont('Malgun', malgun_gothic_path))
-                        font_name = 'Malgun'
-                        st.warning("⚠️ 나눔고딕 폰트를 찾을 수 없어 맑은 고딕으로 대체합니다.")
-                    else:
-                        st.error("⚠️ 한글 폰트(나눔고딕, 맑은 고딕)를 찾을 수 없습니다. 보고서의 한글이 깨질 수 있습니다.")
-
-                    # --- PDF 생성 준비 ---
+                    # PDF 생성
                     pdf_buffer = BytesIO()
                     doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
                     story = []
                     
-                    # --- 스타일 설정 ---
+                    # 스타일 설정 - 글꼴 크기 증가
                     styles = getSampleStyleSheet()
-                    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=28, textColor=colors.HexColor('#1f4788'), alignment=TA_CENTER, fontName=font_name, spaceAfter=30)
-                    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=18, textColor=colors.HexColor('#2e5090'), fontName=font_name, spaceAfter=12, spaceBefore=12)
-                    subheading_style = ParagraphStyle('CustomSubHeading', parent=styles['Heading3'], fontSize=14, textColor=colors.HexColor('#3a5fa0'), fontName=font_name, spaceAfter=10)
-                    normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=10, fontName=font_name, leading=14)
-                    table_header_style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey), ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke), ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('FONTNAME', (0, 0), (-1, -1), font_name), ('GRID', (0, 0), (-1, -1), 0.5, colors.black), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('FONTSIZE', (0,0), (-1, -1), 10)])
+                    title_style = ParagraphStyle(
+                        'CustomTitle',
+                        parent=styles['Heading1'],
+                        fontSize=28,  # 24에서 28로 증가
+                        textColor=colors.HexColor('#1f4788'),
+                        alignment=TA_CENTER,
+                        fontName=font_name,
+                        spaceAfter=30
+                    )
                     
-                    # --- 보고서 내용 생성 (전체 탭 포함) ---
-
+                    heading_style = ParagraphStyle(
+                        'CustomHeading',
+                        parent=styles['Heading2'],
+                        fontSize=18,  # 16에서 18로 증가
+                        textColor=colors.HexColor('#2e5090'),
+                        fontName=font_name,
+                        spaceAfter=12
+                    )
+                    
+                    subheading_style = ParagraphStyle(
+                        'CustomSubHeading',
+                        parent=styles['Heading3'],
+                        fontSize=14,  # 새로 추가
+                        textColor=colors.HexColor('#3a5fa0'),
+                        fontName=font_name,
+                        spaceAfter=10
+                    )
+                    
+                    normal_style = ParagraphStyle(
+                        'CustomNormal',
+                        parent=styles['Normal'],
+                        fontSize=12,  # 10에서 12로 증가
+                        fontName=font_name,
+                        leading=14
+                    )
+                    
                     # 제목 페이지
                     story.append(Spacer(1, 1.5*inch))
                     story.append(Paragraph("근골격계 유해요인조사 보고서", title_style))
                     story.append(Spacer(1, 0.5*inch))
+                    
+                    # 사업장 정보
                     if st.session_state.get("사업장명"):
-                        사업장정보 = f"""<para align="center" fontSize="14"><b>사업장명:</b> {st.session_state.get("사업장명", "")}<br/><b>조사일:</b> {datetime.now().strftime('%Y년 %m월 %d일')}</para>"""
-                        story.append(Paragraph(사업장정보, ParagraphStyle(name='Centered', parent=normal_style, alignment=TA_CENTER)))
+                        사업장정보 = f"""
+                        <para align="center" fontSize="14">
+                        <b>사업장명:</b> {st.session_state.get("사업장명", "")}<br/>
+                        <b>조사일:</b> {datetime.now().strftime('%Y년 %m월 %d일')}
+                        </para>
+                        """
+                        story.append(Paragraph(사업장정보, normal_style))
+                    
                     story.append(PageBreak())
-
+                    
                     # 1. 사업장 개요
                     story.append(Paragraph("1. 사업장 개요", heading_style))
-                    사업장_data = [["항목", "내용"], ["사업장명", st.session_state.get("사업장명", "")], ["소재지", st.session_state.get("소재지", "")], ["업종", st.session_state.get("업종", "")], ["예비조사일", str(st.session_state.get("예비조사", ""))], ["본조사일", str(st.session_state.get("본조사", ""))], ["수행기관", st.session_state.get("수행기관", "")], ["담당자", st.session_state.get("성명", "")]]
+                    
+                    사업장_data = [
+                        ["항목", "내용"],
+                        ["사업장명", st.session_state.get("사업장명", "")],
+                        ["소재지", st.session_state.get("소재지", "")],
+                        ["업종", st.session_state.get("업종", "")],
+                        ["예비조사일", str(st.session_state.get("예비조사", ""))],
+                        ["본조사일", str(st.session_state.get("본조사", ""))],
+                        ["수행기관", st.session_state.get("수행기관", "")],
+                        ["담당자", st.session_state.get("성명", "")]
+                    ]
+                    
                     t = Table(사업장_data, colWidths=[2*inch, 4*inch])
-                    t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey), ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke), ('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('FONTNAME', (0, 0), (-1, -1), font_name), ('FONTSIZE', (0, 0), (-1, -1), 12), ('BOTTOMPADDING', (0, 0), (-1, -1), 12), ('BACKGROUND', (0, 1), (0, -1), colors.beige), ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+                    t.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), font_name),
+                        ('FONTSIZE', (0, 0), (-1, -1), 12),  # 10에서 12로 증가
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                        ('BACKGROUND', (0, 1), (0, -1), colors.beige),
+                        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                    ]))
                     story.append(t)
                     story.append(Spacer(1, 0.5*inch))
-
+                    
                     # 2. 근골격계 부담작업 체크리스트
                     if "checklist_df" in st.session_state and not st.session_state["checklist_df"].empty:
                         story.append(PageBreak())
                         story.append(Paragraph("2. 근골격계 부담작업 체크리스트", heading_style))
-                        df = st.session_state["checklist_df"]
-                        data = [df.columns.to_list()] + df.values.tolist()
-                        t = Table(data, repeatRows=1)
-                        t.setStyle(table_header_style)
-                        story.append(t)
-                        story.append(Spacer(1, 0.5*inch))
-
+                        
+                        # 체크리스트 데이터를 테이블로 변환
+                        체크리스트_data = [list(st.session_state["checklist_df"].columns)]
+                        for _, row in st.session_state["checklist_df"].iterrows():
+                            체크리스트_data.append(list(row))
+                        
+                        # 테이블 생성
+                        체크리스트_table = Table(체크리스트_data, repeatRows=1)
+                        체크리스트_table.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, -1), font_name),
+                            ('FONTSIZE', (0, 0), (-1, -1), 10),
+                            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                        ]))
+                        story.append(체크리스트_table)
+                    
                     # 3. 유해요인조사표
                     if "유해요인조사_목록" in st.session_state and st.session_state["유해요인조사_목록"]:
                         for 조사표명 in st.session_state["유해요인조사_목록"]:
                             story.append(PageBreak())
                             story.append(Paragraph(f"3. {조사표명}", heading_style))
+                            
                             # 조사개요
                             story.append(Paragraph("가. 조사개요", subheading_style))
-                            조사개요_data = [["조사일시", st.session_state.get(f"조사일시_{조사표명}", "")], ["부서명", st.session_state.get(f"부서명_{조사표명}", "")], ["조사자", st.session_state.get(f"조사자_{조사표명}", "")], ["작업공정명", st.session_state.get(f"작업공정명_{조사표명}", "")], ["작업명", st.session_state.get(f"작업명_{조사표명}", "")]]
+                            조사개요_data = [
+                                ["조사일시", st.session_state.get(f"조사일시_{조사표명}", "")],
+                                ["부서명", st.session_state.get(f"부서명_{조사표명}", "")],
+                                ["조사자", st.session_state.get(f"조사자_{조사표명}", "")],
+                                ["작업공정명", st.session_state.get(f"작업공정명_{조사표명}", "")],
+                                ["작업명", st.session_state.get(f"작업명_{조사표명}", "")]
+                            ]
+                            
                             조사개요_table = Table(조사개요_data, colWidths=[2*inch, 4*inch])
-                            조사개요_table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 1, colors.black),('FONTNAME', (0, 0), (-1, -1), font_name), ('FONTSIZE', (0, 0), (-1, -1), 11), ('BOTTOMPADDING', (0, 0), (-1, -1), 10), ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),]))
+                            조사개요_table.setStyle(TableStyle([
+                                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                                ('FONTNAME', (0, 0), (-1, -1), font_name),
+                                ('FONTSIZE', (0, 0), (-1, -1), 11),
+                                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                                ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+                            ]))
                             story.append(조사개요_table)
                             story.append(Spacer(1, 0.3*inch))
+                            
                             # 작업장 상황조사
                             story.append(Paragraph("나. 작업장 상황조사", subheading_style))
                             상황조사_data = [["항목", "상태", "세부사항"]]
+                            
                             for 항목 in ["작업설비", "작업량", "작업속도", "업무변화"]:
                                 상태 = st.session_state.get(f"{항목}_상태_{조사표명}", "변화없음")
                                 세부사항 = ""
-                                if 상태 == "감소": 세부사항 = st.session_state.get(f"{항목}_감소_시작_{조사표명}", "")
-                                elif 상태 == "증가": 세부사항 = st.session_state.get(f"{항목}_증가_시작_{조사표명}", "")
-                                elif 상태 == "기타": 세부사항 = st.session_state.get(f"{항목}_기타_내용_{조사표명}", "")
+                                if 상태 == "감소":
+                                    세부사항 = st.session_state.get(f"{항목}_감소_시작_{조사표명}", "")
+                                elif 상태 == "증가":
+                                    세부사항 = st.session_state.get(f"{항목}_증가_시작_{조사표명}", "")
+                                elif 상태 == "기타":
+                                    세부사항 = st.session_state.get(f"{항목}_기타_내용_{조사표명}", "")
+                                
                                 상황조사_data.append([항목, 상태, 세부사항])
+                            
                             상황조사_table = Table(상황조사_data, colWidths=[1.5*inch, 2*inch, 2.5*inch])
-                            상황조사_table.setStyle(table_header_style)
+                            상황조사_table.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                                ('FONTNAME', (0, 0), (-1, -1), font_name),
+                                ('FONTSIZE', (0, 0), (-1, -1), 11),
+                                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ]))
                             story.append(상황조사_table)
                     
-                    # 4. 작업조건조사 및 유해요인평가
-                    작업명_목록_pdf = st.session_state["checklist_df"]["작업명"].dropna().unique().tolist() if "checklist_df" in st.session_state and not st.session_state["checklist_df"].empty else []
+                    # 4. 작업조건조사
+                    작업명_목록_pdf = []
+                    if "checklist_df" in st.session_state and not st.session_state["checklist_df"].empty:
+                        작업명_목록_pdf = st.session_state["checklist_df"]["작업명"].dropna().unique().tolist()
+                    
                     for 작업명 in 작업명_목록_pdf:
-                        story.append(PageBreak())
-                        story.append(Paragraph(f"4. 작업조건조사 - {작업명}", heading_style))
-                        # 2단계: 작업부하/빈도
                         data_key = f"작업조건_data_{작업명}"
                         if data_key in st.session_state:
-                            df = st.session_state[data_key]
-                            if not df.empty:
-                                story.append(Paragraph("가. 작업별 작업부하 및 작업빈도", subheading_style))
-                                data = [df.columns.to_list()] + df.values.tolist()
-                                t = Table(data, repeatRows=1)
-                                t.setStyle(table_header_style)
-                                story.append(t)
-                        # 3단계: 원인분석
-                        원인분석_key = f"원인분석_data_{작업명}"
-                        if 원인분석_key in st.session_state:
-                            df = st.session_state[원인분석_key]
-                            if not df.empty:
-                                story.append(Spacer(1, 0.3*inch))
-                                story.append(Paragraph("나. 유해요인 원인분석", subheading_style))
-                                data = [df.columns.to_list()] + df.values.tolist()
-                                t = Table(data, repeatRows=1)
-                                t.setStyle(table_header_style)
-                                story.append(t)
-
-                    # 5. 정밀조사
-                    if "정밀조사_목록" in st.session_state and st.session_state["정밀조사_목록"]:
-                        story.append(PageBreak())
-                        story.append(Paragraph("5. 정밀조사", heading_style))
-                        for 조사명 in st.session_state["정밀조사_목록"]:
-                            story.append(Paragraph(f"정밀조사: {조사명}", subheading_style))
-                            df_key = f"정밀_원인분석_data_{조사명}"
-                            if df_key in st.session_state and not st.session_state[df_key].empty:
-                                df = st.session_state[df_key]
-                                data = [df.columns.to_list()] + df.values.tolist()
-                                t = Table(data, repeatRows=1)
-                                t.setStyle(table_header_style)
-                                story.append(t)
-                                story.append(Spacer(1, 0.3*inch))
+                            작업_df = st.session_state[data_key]
+                            if isinstance(작업_df, pd.DataFrame) and not 작업_df.empty:
+                                story.append(PageBreak())
+                                story.append(Paragraph(f"4. 작업조건조사 - {작업명}", heading_style))
+                                
+                                # 작업조건 데이터 테이블
+                                작업조건_data = [list(작업_df.columns)]
+                                for _, row in 작업_df.iterrows():
+                                    작업조건_data.append(list(row))
+                                
+                                작업조건_table = Table(작업조건_data, repeatRows=1)
+                                작업조건_table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('FONTNAME', (0, 0), (-1, -1), font_name),
+                                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                                ]))
+                                story.append(작업조건_table)
                     
-                    # 6. 증상조사 분석
-                    story.append(PageBreak())
-                    story.append(Paragraph("6. 근골격계 자기증상 분석", heading_style))
+                    # 5. 증상조사 분석
+                    증상조사_섹션_추가 = False
                     
-                    def add_symptom_table(title, session_key, story, subheading_style, table_header_style):
-                        if session_key in st.session_state and not st.session_state[session_key].empty:
-                            df = st.session_state[session_key]
-                            # 빈 행이 아닌 데이터만 필터링
-                            df_clean = df.replace('', pd.NA).dropna(how='all')
-                            if not df_clean.empty:
-                                story.append(Paragraph(title, subheading_style))
-                                data = [df_clean.columns.to_list()] + df_clean.values.tolist()
-                                t = Table(data, repeatRows=1)
-                                t.setStyle(table_header_style)
-                                story.append(t)
-                                story.append(Spacer(1, 0.3*inch))
-
-                    add_symptom_table("6.1 기초현황", "기초현황_data_저장", story, subheading_style, table_header_style)
-                    add_symptom_table("6.2 작업기간", "작업기간_data_저장", story, subheading_style, table_header_style)
-                    add_symptom_table("6.3 육체적 부담정도", "육체적부담_data_저장", story, subheading_style, table_header_style)
-                    add_symptom_table("6.4 근골격계 통증 호소자 분포", "통증호소자_data_저장", story, subheading_style, table_header_style)
-
-                    # 7. 작업환경개선계획서
+                    if "기초현황_data_저장" in st.session_state and not st.session_state["기초현황_data_저장"].empty:
+                        if not 증상조사_섹션_추가:
+                            story.append(PageBreak())
+                            story.append(Paragraph("5. 근골격계 자기증상 분석", heading_style))
+                            증상조사_섹션_추가 = True
+                        
+                        story.append(Paragraph("5.1 기초현황", subheading_style))
+                        기초현황_df = st.session_state["기초현황_data_저장"]
+                        기초현황_data = [list(기초현황_df.columns)]
+                        for _, row in 기초현황_df.iterrows():
+                            기초현황_data.append(list(row))
+                        
+                        기초현황_table = Table(기초현황_data, repeatRows=1)
+                        기초현황_table.setStyle(TableStyle([
+                            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, -1), font_name),
+                            ('FONTSIZE', (0, 0), (-1, -1), 10),
+                            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                        ]))
+                        story.append(기초현황_table)
+                        story.append(Spacer(1, 0.3*inch))
+                    
+                    # 6. 작업환경개선계획서
                     if "개선계획_data_저장" in st.session_state:
                         개선계획_df = st.session_state["개선계획_data_저장"]
-                        if isinstance(개선계획_df, pd.DataFrame) and not 개선계획_df.empty:
-                            개선계획_df_clean = 개선계획_df.replace('', pd.NA).dropna(how='all')
+                        if not 개선계획_df.empty:
+                            개선계획_df_clean = 개선계획_df[개선계획_df.astype(str).ne('').any(axis=1)]
                             if not 개선계획_df_clean.empty:
                                 story.append(PageBreak())
-                                story.append(Paragraph("7. 작업환경개선계획서", heading_style))
-                                data = [개선계획_df_clean.columns.to_list()] + 개선계획_df_clean.values.tolist()
-                                col_widths = [0.7*inch, 0.7*inch, 0.9*inch, 1.2*inch, 1*inch, 1.2*inch, 0.7*inch, 0.7*inch, 0.7*inch]
-                                t = Table(data, colWidths=col_widths, repeatRows=1)
-                                t.setStyle(table_header_style)
-                                story.append(t)
-
-                    # --- PDF 생성 실행 ---
+                                story.append(Paragraph("6. 작업환경개선계획서", heading_style))
+                                
+                                # 개선계획 데이터 테이블
+                                개선계획_data = [list(개선계획_df_clean.columns)]
+                                for _, row in 개선계획_df_clean.iterrows():
+                                    개선계획_data.append(list(row))
+                                
+                                # 컬럼 너비 조정
+                                col_widths = [0.8*inch, 0.8*inch, 1*inch, 1.2*inch, 1*inch, 1.2*inch, 0.8*inch, 0.8*inch, 0.8*inch]
+                                
+                                개선계획_table = Table(개선계획_data, colWidths=col_widths, repeatRows=1)
+                                개선계획_table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('FONTNAME', (0, 0), (-1, -1), font_name),
+                                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                ]))
+                                story.append(개선계획_table)
+                    
+                    # PDF 생성
                     doc.build(story)
                     pdf_buffer.seek(0)
                     
+                    # 다운로드 버튼
                     st.download_button(
                         label="📥 PDF 다운로드",
                         data=pdf_buffer,
@@ -1160,8 +1315,13 @@ with tabs[6]:
                         mime="application/pdf"
                     )
                     
+                    st.success("PDF 보고서가 생성되었습니다!")
+                    
                 except Exception as e:
-                    st.error(f"PDF 생성 중 오류가 발생했습니다: {e}")
-                    st.info("필요한 라이브러리가 설치되어 있는지, 폰트 파일 경로가 올바른지 확인해주세요.")
+                    error_message = "PDF 생성 중 오류가 발생했습니다: " + str(e)
+                    st.error(error_message)
+                    install_message = "reportlab 라이브러리를 설치해주세요: pip install reportlab"
+                    st.info(install_message)
         else:
-            st.info("PDF 생성 기능을 사용하려면 reportlab 라이브러리를 설치하세요: pip install reportlab")
+            no_pdf_message = "PDF 생성 기능을 사용하려면 reportlab 라이브러리를 설치하세요: pip install reportlab"
+            st.info(no_pdf_message)
